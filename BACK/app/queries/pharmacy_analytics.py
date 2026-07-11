@@ -7,6 +7,13 @@ WHERE LOWER(name) LIKE LOWER(%s)
 LIMIT 1;
 """
 
+GET_PHARMACY_NAME_BY_ID = """
+SELECT pharmacy_id, name
+FROM dim_pharmacy
+WHERE pharmacy_id = %s
+LIMIT 1;
+"""
+
 GET_PHARMACY_PAGE_TRAFFIC = """
 SELECT
     dt.date_key,

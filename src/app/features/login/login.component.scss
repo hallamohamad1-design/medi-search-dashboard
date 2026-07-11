@@ -90,7 +90,21 @@
   }
 }
 
-// ── Right form panel ─────────────────────────────────────────────────────────
+  .brand-hint {
+    margin-top: $space-8;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: $radius-lg;
+    padding: $space-4;
+
+    &__title { font-size: $font-size-xs; text-transform: uppercase; letter-spacing: 0.06em; color: $color-accent-300; margin-bottom: $space-2; }
+    &__row   { font-size: $font-size-sm; color: rgba(255,255,255,0.75); margin-bottom: $space-1;
+      strong { color: $color-text-inverse; }
+    }
+    &__note  { margin-top: $space-2; font-size: $font-size-xs; color: rgba(255,255,255,0.45);
+      code { background: rgba(255,255,255,0.1); padding: 1px 5px; border-radius: 3px; }
+    }
+  }
 .login-page__form {
   background: $color-bg;
   @include flex-center;
@@ -239,4 +253,54 @@
   }
 
   &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+// Error banner
+.login-error {
+  background: $color-error-bg;
+  color: $color-error;
+  border: 1px solid lighten($color-error, 25%);
+  border-radius: $radius-md;
+  padding: $space-3 $space-4;
+  font-size: $font-size-sm;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin-bottom: $space-2;
+}
+
+// Password eye toggle
+.form-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-input-wrap .form-input {
+  padding-right: $space-10;
+  width: 100%;
+}
+
+.form-input-eye {
+  position: absolute;
+  right: $space-3;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  line-height: 1;
+}
+
+// Loading spinner
+.login-btn__spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  margin-right: $space-2;
+}
+
+// Card logo
+.login-card__logo {
+  font-size: 2rem;
+  margin-bottom: $space-3;
 }

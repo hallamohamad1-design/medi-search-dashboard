@@ -1,6 +1,6 @@
 <div class="login-page">
 
-  <!-- Left panel — branding -->
+  <!-- Left panel -->
   <div class="login-page__brand">
     <div class="brand-content">
       <div class="brand-logo">
@@ -12,8 +12,6 @@
         Real-time insights from Egypt's pharmaceutical search platform.
         Track traffic, drug trends, and availability across all governorates.
       </p>
-
-      <!-- Stats from real DB -->
       <div class="brand-stats">
         <div class="brand-stat">
           <span class="brand-stat__value">4</span>
@@ -24,9 +22,17 @@
           <span class="brand-stat__label">Tracked Drugs</span>
         </div>
         <div class="brand-stat">
-          <span class="brand-stat__value">2</span>
-          <span class="brand-stat__label">Governorates</span>
+          <span class="brand-stat__value">Live</span>
+          <span class="brand-stat__label">Neon Database</span>
         </div>
+      </div>
+
+      <!-- Credentials hint -->
+      <div class="brand-hint">
+        <p class="brand-hint__title">Default credentials</p>
+        <p class="brand-hint__row"><strong>Admin:</strong> admin / Admin@2024!</p>
+        <p class="brand-hint__row"><strong>Pharmacy:</strong> el_ezaby_pharmacy / Pharmacy@1</p>
+        <p class="brand-hint__note">Run <code>POST /api/auth/setup</code> first if this is a fresh deployment.</p>
       </div>
     </div>
   </div>
@@ -36,80 +42,73 @@
     <div class="login-card">
 
       <div class="login-card__header">
-        <h2 class="login-card__title">Sign in to Dashboard</h2>
-        <p class="login-card__sub">Select your role and pharmacy to continue</p>
+        <div class="login-card__logo" aria-hidden="true">💊</div>
+        <h2 class="login-card__title">Sign in</h2>
+        <p class="login-card__sub">Enter your dashboard credentials</p>
       </div>
 
-      <form class="login-form" (ngSubmit)="login()" #f="ngForm">
+      @if (error) {
+        <div class="login-error" role="alert">
+          <span aria-hidden="true">⚠️</span> {{ error }}
+        </div>
+      }
 
-        <!-- Name field -->
+      <form class="login-form" (ngSubmit)="login()" #f="ngForm" novalidate>
+
         <div class="form-group">
-          <label class="form-label" for="userName">Your Name</label>
+          <label class="form-label" for="username">Username</label>
           <input
-            id="userName"
+            id="username"
             class="form-input"
             type="text"
-            [(ngModel)]="userName"
-            name="userName"
-            placeholder="Enter your name"
+            [(ngModel)]="username"
+            name="username"
+            placeholder="e.g. el_ezaby_pharmacy"
+            autocomplete="username"
             required
-            aria-required="true" />
+            [disabled]="loading" />
         </div>
 
-        <!-- Role selector -->
         <div class="form-group">
-          <label class="form-label">I am a</label>
-          <div class="role-toggle" role="radiogroup" aria-label="Select role">
-
-            <label class="role-option" [class.role-option--active]="selectedRole === 'pharmacy'">
-              <input type="radio" name="role" value="pharmacy"
-                [(ngModel)]="selectedRole" class="sr-only" />
-              <span class="role-option__icon" aria-hidden="true">🏥</span>
-              <span class="role-option__label">Pharmacy User</span>
-              <span class="role-option__sub">View your pharmacy analytics</span>
-            </label>
-
-            <label class="role-option" [class.role-option--active]="selectedRole === 'admin'">
-              <input type="radio" name="role" value="admin"
-                [(ngModel)]="selectedRole" class="sr-only" />
-              <span class="role-option__icon" aria-hidden="true">🔑</span>
-              <span class="role-option__label">Admin</span>
-              <span class="role-option__sub">System-wide analytics</span>
-            </label>
-
+          <label class="form-label" for="password">Password</label>
+          <div class="form-input-wrap">
+            <input
+              id="password"
+              class="form-input"
+              [type]="showPass ? 'text' : 'password'"
+              [(ngModel)]="password"
+              name="password"
+              placeholder="Enter password"
+              autocomplete="current-password"
+              required
+              [disabled]="loading" />
+            <button
+              type="button"
+              class="form-input-eye"
+              (click)="showPass = !showPass"
+              [attr.aria-label]="showPass ? 'Hide password' : 'Show password'">
+              {{ showPass ? '🙈' : '👁️' }}
+            </button>
           </div>
         </div>
 
-        <!-- Pharmacy selector (only for pharmacy role) -->
-        @if (selectedRole === 'pharmacy') {
-          <div class="form-group">
-            <label class="form-label" for="pharmacySelect">Select Your Pharmacy</label>
-            <div class="pharmacy-grid" role="radiogroup" aria-label="Select pharmacy">
-              @for (p of pharmacies; track p.id) {
-                <label class="pharmacy-option"
-                  [class.pharmacy-option--active]="selectedPharmacy === p.name">
-                  <input type="radio" name="pharmacy" [value]="p.name"
-                    [(ngModel)]="selectedPharmacy" class="sr-only" />
-                  <span class="pharmacy-option__icon" aria-hidden="true">🏪</span>
-                  <span class="pharmacy-option__name">{{ p.name }}</span>
-                </label>
-              }
-            </div>
-          </div>
-        }
-
-        <!-- Submit -->
-        <button type="submit" class="login-btn" [disabled]="!userName.trim()">
-          <span>Enter Dashboard</span>
-          <span aria-hidden="true">→</span>
+        <button
+          type="submit"
+          class="login-btn"
+          [disabled]="loading || !username.trim() || !password">
+          @if (loading) {
+            <span class="login-btn__spinner" aria-hidden="true">⏳</span>
+            Signing in…
+          } @else {
+            <span>Sign in →</span>
+          }
         </button>
 
       </form>
 
       <p class="login-card__note">
-        Live data from Neon PostgreSQL ·
         <a href="https://medi-search-eight.vercel.app" target="_blank" rel="noopener">
-          Back to MediSearch
+          ← Back to MediSearch
         </a>
       </p>
 

@@ -1,0 +1,92 @@
+<div class="pharm-mgmt">
+
+  <div class="pharm-mgmt__header">
+    <div>
+      <h2 class="pharm-mgmt__title">🏥 Pharmacy Access Control</h2>
+      <p class="pharm-mgmt__sub">
+        Enable or disable pharmacy login access. Disabled pharmacies are rejected at authentication —
+        they cannot reach the dashboard even by hitting the API directly.
+      </p>
+    </div>
+  </div>
+
+  <!-- Warning banner -->
+  <div class="pharm-mgmt__warning" role="note">
+    <span aria-hidden="true">⚠️</span>
+    <span>
+      Changes write to <code>dim_pharmacy.is_active</code> in the data warehouse.
+      Update your OLTP source table to make changes survive the next daily ETL refresh.
+    </span>
+  </div>
+
+  <!-- Error -->
+  @if (error) {
+    <div class="error-state" role="alert">
+      <span class="error-state__icon">⚠️</span>
+      <p class="error-state__title">{{ error }}</p>
+    </div>
+  }
+
+  <!-- Success -->
+  @if (successMsg) {
+    <div class="pharm-mgmt__success" role="status">
+      {{ successMsg }}
+    </div>
+  }
+
+  <!-- Loading -->
+  @if (state === 'loading') {
+    <div class="pharm-mgmt__skeleton">
+      @for (i of [1,2,3,4]; track i) {
+        <div class="pharm-mgmt__skel-row"></div>
+      }
+    </div>
+  }
+
+  <!-- Pharmacy table -->
+  @if (state === 'success') {
+    <div class="pharm-mgmt__table-wrap">
+      <table class="ms-table" role="table" aria-label="Pharmacy access control">
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Pharmacy Name</th>
+            <th scope="col" style="text-align:center">Status</th>
+            <th scope="col" style="text-align:center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of pharmacies; track p.pharmacy_id) {
+            <tr [class.pharm-mgmt__row--disabled]="!p.is_active">
+              <td>{{ p.pharmacy_id }}</td>
+              <td class="pharm-mgmt__name">{{ p.name }}</td>
+              <td style="text-align:center">
+                <span class="badge"
+                  [class.badge--success]="p.is_active"
+                  [class.badge--error]="!p.is_active">
+                  {{ p.is_active ? '✅ Active' : '🚫 Disabled' }}
+                </span>
+              </td>
+              <td style="text-align:center">
+                <button
+                  class="btn btn--sm"
+                  [class.btn--secondary]="p.is_active"
+                  [class.btn--primary]="!p.is_active"
+                  [disabled]="p.toggling"
+                  (click)="toggle(p)"
+                  [attr.aria-label]="(p.is_active ? 'Disable ' : 'Enable ') + p.name">
+                  @if (p.toggling) {
+                    ⏳
+                  } @else {
+                    {{ p.is_active ? '🚫 Disable' : '✅ Enable' }}
+                  }
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+</div>

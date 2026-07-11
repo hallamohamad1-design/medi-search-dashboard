@@ -1,18 +1,14 @@
 <div class="layout" [class.layout--collapsed]="sidebarCollapsed()">
 
-  <!-- Sidebar -->
   <aside class="sidebar" role="navigation" aria-label="Dashboard navigation">
 
     <!-- Brand -->
     <div class="sidebar__brand">
       <a href="https://medi-search-eight.vercel.app" class="sidebar__logo" aria-label="MediSearch home">
         <span class="sidebar__logo-icon" aria-hidden="true">💊</span>
-        @if (!sidebarCollapsed()) {
-          <span class="sidebar__logo-text">MediSearch</span>
-        }
+        @if (!sidebarCollapsed()) { <span class="sidebar__logo-text">MediSearch</span> }
       </a>
-      <button
-        class="sidebar__toggle btn btn--ghost btn--sm"
+      <button class="sidebar__toggle btn btn--ghost btn--sm"
         (click)="toggleSidebar()"
         [attr.aria-expanded]="!sidebarCollapsed()"
         aria-label="Toggle sidebar">
@@ -24,30 +20,18 @@
     @if (!sidebarCollapsed()) {
       <div class="sidebar__user">
         <div class="sidebar__user-avatar" aria-hidden="true">
-          {{ auth.currentUser.name.charAt(0).toUpperCase() }}
+          {{ currentUsername.charAt(0).toUpperCase() }}
         </div>
         <div class="sidebar__user-info">
-          <p class="sidebar__user-name">{{ auth.currentUser.name }}</p>
+          <p class="sidebar__user-name">{{ currentUsername }}</p>
           <p class="sidebar__user-role">
-            <span class="badge badge--primary">{{ auth.currentUser.role | titlecase }}</span>
+            <span class="badge badge--primary">{{ currentRole | titlecase }}</span>
           </p>
-          @if (auth.currentUser.pharmacyName) {
-            <p class="sidebar__user-pharmacy">🏥 {{ auth.currentUser.pharmacyName }}</p>
+          @if (auth.currentUser?.pharmacy_name) {
+            <p class="sidebar__user-pharmacy">🏥 {{ auth.currentUser?.pharmacy_name }}</p>
           }
         </div>
       </div>
-
-      <!-- Pharmacy switcher (dev helper — remove when real auth is wired) -->
-      @if (auth.currentUser.role === 'pharmacy') {
-        <div class="sidebar__pharmacy-switch">
-          <label class="sidebar__switch-label">Switch Pharmacy</label>
-          <select class="sidebar__switch-select" (change)="switchPharmacy($event)">
-            @for (p of pharmacyOptions; track p) {
-              <option [value]="p" [selected]="p === auth.currentUser.pharmacyName">{{ p }}</option>
-            }
-          </select>
-        </div>
-      }
     }
 
     <!-- Nav -->
@@ -55,16 +39,13 @@
       <ul role="list">
         @for (item of visibleNavItems; track item.route) {
           <li>
-            <a
-              class="sidebar__nav-item"
+            <a class="sidebar__nav-item"
               [routerLink]="item.route"
               routerLinkActive="sidebar__nav-item--active"
               [attr.aria-label]="sidebarCollapsed() ? item.label : null"
               [title]="sidebarCollapsed() ? item.label : ''">
               <span class="sidebar__nav-icon" aria-hidden="true">{{ item.icon }}</span>
-              @if (!sidebarCollapsed()) {
-                <span class="sidebar__nav-label">{{ item.label }}</span>
-              }
+              @if (!sidebarCollapsed()) { <span class="sidebar__nav-label">{{ item.label }}</span> }
             </a>
           </li>
         }
@@ -73,17 +54,6 @@
 
     <!-- Footer -->
     <div class="sidebar__footer">
-      @if (!sidebarCollapsed()) {
-        <!-- Role switcher -->
-        <div class="sidebar__role-switch">
-          <button class="sidebar__role-btn"
-            [class.sidebar__role-btn--active]="auth.currentUser.role === 'pharmacy'"
-            (click)="switchRole('pharmacy')">Pharmacy</button>
-          <button class="sidebar__role-btn"
-            [class.sidebar__role-btn--active]="auth.currentUser.role === 'admin'"
-            (click)="switchRole('admin')">Admin</button>
-        </div>
-      }
       <div class="sidebar__footer-actions">
         <a href="https://medi-search-eight.vercel.app" class="sidebar__footer-link">
           <span aria-hidden="true">🏠</span>
@@ -98,40 +68,28 @@
 
   </aside>
 
-  <!-- Main area -->
+  <!-- Main -->
   <div class="main">
-    <!-- Top bar -->
     <header class="topbar" role="banner">
       <div class="topbar__left">
-        <button
-          class="topbar__menu-btn btn btn--ghost btn--sm"
-          (click)="toggleSidebar()"
-          aria-label="Toggle menu">
-          ☰
-        </button>
+        <button class="topbar__menu-btn btn btn--ghost btn--sm" (click)="toggleSidebar()" aria-label="Toggle menu">☰</button>
         <div class="topbar__breadcrumb" aria-label="breadcrumb">
           <span>Dashboard</span>
           <span class="topbar__breadcrumb-sep" aria-hidden="true">/</span>
           <span class="topbar__breadcrumb-active">
-            {{ auth.currentUser.role === 'admin' ? 'Admin' : auth.currentUser.pharmacyName ?? 'Pharmacy' }}
+            {{ currentRole === 'admin' ? 'Admin' : currentPharmacyName }}
           </span>
         </div>
       </div>
-
       <div class="topbar__right">
-        <span class="topbar__refresh-note" title="Data refreshes daily">
-          🔄 Live data
-        </span>
+        <span class="topbar__refresh-note">🔄 Live data</span>
         <div class="topbar__user-chip">
-          <span class="topbar__user-avatar" aria-hidden="true">
-            {{ auth.currentUser.name.charAt(0).toUpperCase() }}
-          </span>
-          <span class="topbar__user-name">{{ auth.currentUser.pharmacyName ?? auth.currentUser.name }}</span>
+          <span class="topbar__user-avatar" aria-hidden="true">{{ currentUsername.charAt(0).toUpperCase() }}</span>
+          <span class="topbar__user-name">{{ currentPharmacyName }}</span>
         </div>
       </div>
     </header>
 
-    <!-- Page content -->
     <main class="content" id="main-content" tabindex="-1">
       <router-outlet />
     </main>

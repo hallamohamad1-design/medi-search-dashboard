@@ -1,28 +1,24 @@
 import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpEvent } from '@angular/common/http';
+import { inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { AuthService } from '../services/auth.service';
 
 /**
- * Adds common headers to every request going to /api/*.
- *
- * Extend here to:
- *  - Attach a Bearer token:  req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
- *  - Set Accept-Language for Arabic/English content negotiation
+ * Attaches the JWT Bearer token + JSON headers to every /api/* request.
  */
 export const apiInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
   next: HttpHandlerFn,
 ): Observable<HttpEvent<unknown>> => {
-  // Only modify requests to our own API
-  if (!req.url.includes('/api/')) {
-    return next(req);
-  }
+  if (!req.url.includes('/api/')) return next(req);
 
-  const apiReq = req.clone({
-    setHeaders: {
-      'Accept':       'application/json',
-      'Content-Type': 'application/json',
-    },
-  });
+  const auth    = inject(AuthService);
+  const token   = auth.getToken();
+  const headers: Record<string, string> = {
+    'Accept':       'application/json',
+    'Content-Type': 'application/json',
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  return next(apiReq);
+  return next(req.clone({ setHeaders: headers }));
 };

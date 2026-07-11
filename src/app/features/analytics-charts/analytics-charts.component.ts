@@ -225,8 +225,8 @@ export class AnalyticsChartsComponent implements OnInit {
   private loadAll(): void {
     this.state = 'loading';
 
-    const pharmacyName = this.auth.currentUser.pharmacyName ?? '';
-    const isAdmin      = this.auth.currentUser.role === 'admin';
+    const pharmacyName = this.auth.currentUser?.pharmacy_name ?? '';
+    const isAdmin      = this.auth.currentUser?.role === 'admin';
 
     // Admin data — always load (analytics page is accessible to both roles)
     this.svc.getAdminAnalytics().subscribe({
@@ -250,9 +250,9 @@ export class AnalyticsChartsComponent implements OnInit {
       },
     });
 
-    // Pharmacy traffic — load when a pharmacy name is known
+    // Pharmacy traffic — load when pharmacy role
     if (pharmacyName) {
-      this.svc.getPharmacyAnalytics(pharmacyName).subscribe({
+      this.svc.getPharmacyAnalytics().subscribe({
         next: pharmData => {
           this.buildTrafficCharts(pharmData.page_traffic);
           this.buildMixedChart(pharmData.page_traffic);
@@ -261,7 +261,6 @@ export class AnalyticsChartsComponent implements OnInit {
           this.state = 'success';
         },
         error: (err: Error) => {
-          // Non-fatal — charts that need traffic data show empty state
           console.warn('Pharmacy traffic not available:', err.message);
           this.buildWeeklyVelocity();
           this.buildGrowthChart();
@@ -527,9 +526,9 @@ export class AnalyticsChartsComponent implements OnInit {
   // ── Period toggle handler ─────────────────────────────────────────────────
   onPeriodChange(period: '7d' | '14d' | '30d'): void {
     this.selectedPeriod = period;
-    const pharmacyName  = this.auth.currentUser.pharmacyName ?? '';
-    if (pharmacyName) {
-      this.svc.getPharmacyAnalytics(pharmacyName).subscribe({
+    const isPharmacy = this.auth.currentUser?.role === 'pharmacy';
+    if (isPharmacy) {
+      this.svc.getPharmacyAnalytics().subscribe({
         next: data => this.buildTrafficCharts(data.page_traffic),
         error: () => { /* keep existing chart */ },
       });

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError, map, shareReplay } from 'rxjs/operators';
+import { Observable, throwError, of } from 'rxjs';
+import { catchError, map, shareReplay, tap, timeout } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 import {
@@ -21,213 +21,195 @@ import {
   ApiResponse,
 } from '../models/analytics.models';
 
-const BASE = environment.apiUrl;
+const BASE   = environment.apiUrl;
+const TTL_MS = 5 * 60 * 1000; // 5-minute in-session cache
 
-/**
- * DashboardService — single source of truth for all API calls.
- *
- * Endpoints wired:
- *   GET /api/analytics/pharmacy/analytics?name=<name>
- *   GET /api/analytics/pharmacy/low-stock
- *   GET /api/analytics/admin
- *   GET /api/analytics/drug-search?name=<name>
- */
+interface CacheEntry<T> { value: T; expiresAt: number; }
+
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
   private http = inject(HttpClient);
+  private cache = new Map<string, CacheEntry<any>>();
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Pharmacy  →  GET /api/analytics/pharmacy/analytics?name=<pharmacyName>
-  //
-  // Response envelope:  { success, data: { pharmacy_id, pharmacy_name,
-  //                       page_traffic[], drug_trends[] } }
-  // ─────────────────────────────────────────────────────────────────────────
+  private getCached<T>(key: string): T | null {
+    const e = this.cache.get(key);
+    if (!e) return null;
+    if (Date.now() > e.expiresAt) { this.cache.delete(key); return null; }
+    return e.value as T;
+  }
+  private setCached<T>(key: string, v: T): void {
+    this.cache.set(key, { value: v, expiresAt: Date.now() + TTL_MS });
+  }
+  invalidateAll(): void { this.cache.clear(); }
 
-  getPharmacyAnalytics(pharmacyName: string): Observable<PharmacyAnalyticsResponse> {
-    const params = new HttpParams().set('name', pharmacyName);
-    return this.http
-      .get<ApiResponse<PharmacyAnalyticsResponse>>(
-        `${BASE}/api/analytics/pharmacy/analytics`,
-        { params },
-      )
-      .pipe(
-        map(res => {
-          if (!res.success || !res.data) {
-            throw new Error(res.message ?? 'Pharmacy not found.');
-          }
-          return res.data;
-        }),
-        catchError(this.handleError),
-      );
+  private cachedGet<T>(key: string, url: string, params?: HttpParams): Observable<T> {
+    const hit = this.getCached<T>(key);
+    if (hit !== null) return of(hit);
+    return this.http.get<T>(url, params ? { params } : {}).pipe(
+      timeout(25000),
+      tap(v => this.setCached(key, v)),
+      catchError(this.handleError),
+    );
   }
 
-  /** Just the page_traffic array */
-  getPharmacyTraffic(pharmacyName: string): Observable<PageTrafficPoint[]> {
-    return this.getPharmacyAnalytics(pharmacyName).pipe(map(r => r.page_traffic));
+  // ── Pharmacy — token-scoped, no ?name= needed ─────────────────────────────
+  getPharmacyAnalytics(): Observable<PharmacyAnalyticsResponse> {
+    return this.cachedGet<ApiResponse<PharmacyAnalyticsResponse>>(
+      'pharmacy:me', `${BASE}/api/analytics/pharmacy/analytics`,
+    ).pipe(
+      map(res => {
+        if (!res.success || !res.data) throw new Error(res.message ?? 'Pharmacy not found.');
+        return res.data;
+      }),
+      shareReplay(1),
+    );
+  }
+  getPharmacyTraffic(): Observable<PageTrafficPoint[]> {
+    return this.getPharmacyAnalytics().pipe(map(r => r.page_traffic));
+  }
+  getLocalDrugTrends(): Observable<LocalDrugTrend[]> {
+    return this.getPharmacyAnalytics().pipe(map(r => r.drug_trends));
   }
 
-  /** Just the drug_trends array */
-  getLocalDrugTrends(pharmacyName: string): Observable<LocalDrugTrend[]> {
-    return this.getPharmacyAnalytics(pharmacyName).pipe(map(r => r.drug_trends));
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Low-stock  →  GET /api/analytics/pharmacy/low-stock
-  //
-  // Response (NOT wrapped in { data }):
-  //   { success, low_stock_drugs: { count, data[] },
-  //               high_demand_missing_drugs: { count, data[] } }
-  // ─────────────────────────────────────────────────────────────────────────
-
+  // ── Low-stock ──────────────────────────────────────────────────────────────
   getLowStock(): Observable<LowStockResponse> {
-    return this.http
-      .get<LowStockResponse>(`${BASE}/api/analytics/pharmacy/low-stock`)
-      .pipe(catchError(this.handleError));
+    return this.cachedGet<LowStockResponse>('low-stock', `${BASE}/api/analytics/pharmacy/low-stock`);
   }
-
   getLowStockDrugs(): Observable<LowStockDrug[]> {
     return this.getLowStock().pipe(map(r => r.low_stock_drugs.data));
   }
-
   getMissingDrugs(): Observable<MissingDrug[]> {
     return this.getLowStock().pipe(map(r => r.high_demand_missing_drugs.data));
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Admin  →  GET /api/analytics/admin
-  //
-  // Response envelope:  { success, data: { pharmacy_ranking[],
-  //                        area_drug_trends[], top_searched_drugs[],
-  //                        monthly_report[] } }
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Admin — single call, cached, in-flight deduplication ──────────────────
+  private adminAnalytics$: Observable<AdminAnalyticsResponse> | null = null;
 
   getAdminAnalytics(): Observable<AdminAnalyticsResponse> {
-    return this.http
+    const cached = this.getCached<AdminAnalyticsResponse>('admin');
+    if (cached) return of(cached);
+    if (this.adminAnalytics$) return this.adminAnalytics$;
+
+    this.adminAnalytics$ = this.http
       .get<ApiResponse<AdminAnalyticsResponse>>(`${BASE}/api/analytics/admin`)
       .pipe(
+        timeout(25000),
         map(res => {
-          if (!res.success || !res.data) {
-            throw new Error(res.message ?? 'Failed to load admin analytics.');
-          }
+          if (!res.success || !res.data) throw new Error(res.message ?? 'Failed to load admin data.');
           return res.data;
         }),
-        // shareReplay(1) so multiple widgets on the admin page share one HTTP call
+        tap(data => { this.setCached('admin', data); this.adminAnalytics$ = null; }),
         shareReplay(1),
-        catchError(this.handleError),
+        catchError(err => { this.adminAnalytics$ = null; return this.handleError(err); }),
       );
+    return this.adminAnalytics$;
   }
-
-  // ── Convenience slices of admin data ─────────────────────────────────────
 
   getPharmacyTrafficRanking(): Observable<PharmacyTrafficRanking[]> {
     return this.getAdminAnalytics().pipe(map(r => r.pharmacy_ranking));
   }
-
   getTopSearchedDrugs(): Observable<TopSearchedDrug[]> {
     return this.getAdminAnalytics().pipe(map(r => r.top_searched_drugs));
   }
-
   getMonthlySearchVolume(): Observable<MonthlySearchVolume[]> {
     return this.getAdminAnalytics().pipe(map(r => r.monthly_report));
   }
-
-  /**
-   * Area trends with optional client-side filtering.
-   * Filtering happens on the already-fetched admin payload to avoid extra HTTP calls.
-   */
-  getAreaDrugTrends(governorate?: string, city?: string): Observable<AreaDrugTrend[]> {
-    return this.getAdminAnalytics().pipe(
-      map(r => {
-        let t = r.area_drug_trends;
-        if (governorate) t = t.filter(x => x.governorate === governorate);
-        if (city)        t = t.filter(x => x.city === city);
-        return t;
-      }),
-    );
+  getAreaDrugTrends(gov?: string, city?: string): Observable<AreaDrugTrend[]> {
+    return this.getAdminAnalytics().pipe(map(r => {
+      let t = r.area_drug_trends;
+      if (gov)  t = t.filter(x => x.governorate === gov);
+      if (city) t = t.filter(x => x.city === city);
+      return t;
+    }));
   }
-
-  /** Unique governorates from area_drug_trends */
   getGovernorates(): Observable<string[]> {
     return this.getAdminAnalytics().pipe(
       map(r => [...new Set(r.area_drug_trends.map(x => x.governorate))].sort()),
     );
   }
-
-  /** Cities within a governorate */
-  getCities(governorate: string): Observable<string[]> {
+  getCities(gov: string): Observable<string[]> {
     return this.getAdminAnalytics().pipe(
-      map(r =>
-        [...new Set(
-          r.area_drug_trends
-            .filter(x => x.governorate === governorate)
-            .map(x => x.city),
-        )].sort(),
-      ),
+      map(r => [...new Set(
+        r.area_drug_trends.filter(x => x.governorate === gov).map(x => x.city),
+      )].sort()),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Drug analytics widget  →  GET /api/analytics/drug-search?name=<name>
-  //
-  // Response envelope:  { success, data: { drug_name, drug_id,
-  //                        statistics: { average_price, highest_price,
-  //                        lowest_price, pharmacies_in_stock,
-  //                        pharmacies_carrying_drug, availability_percentage } } }
-  // ─────────────────────────────────────────────────────────────────────────
-
+  // ── Drug analytics — partial name search ─────────────────────────────────
   getDrugAnalyticsByName(drugName: string): Observable<DrugSearchAnalytics> {
     const params = new HttpParams().set('name', drugName);
+    return this.cachedGet<ApiResponse<DrugSearchAnalyticsResponse>>(
+      `drug:${drugName.toLowerCase()}`, `${BASE}/api/analytics/drug-search`, params,
+    ).pipe(
+      map(res => {
+        if (!res.success || !res.data) throw new Error(res.message ?? 'Drug not found.');
+        const d = res.data;
+        return {
+          drug_id:              d.drug_id,
+          drug_name:            d.drug_name,
+          avg_price:            d.statistics.average_price,
+          highest_price:        d.statistics.highest_price,
+          lowest_price:         d.statistics.lowest_price,
+          pharmacies_in_stock:  d.statistics.pharmacies_in_stock,
+          pharmacies_carrying:  d.statistics.pharmacies_carrying_drug,
+          availability_percent: d.statistics.availability_percentage,
+        } as DrugSearchAnalytics;
+      }),
+    );
+  }
+
+  // ── Drug autocomplete ─────────────────────────────────────────────────────
+  getDrugSuggestions(query: string): Observable<{ drug_id: number; name: string }[]> {
+    if (!query || query.trim().length < 2) return of([]);
+    const params = new HttpParams().set('q', query.trim());
     return this.http
-      .get<ApiResponse<DrugSearchAnalyticsResponse>>(
-        `${BASE}/api/analytics/drug-search`,
-        { params },
+      .get<{ success: boolean; suggestions: { drug_id: number; name: string }[] }>(
+        `${BASE}/api/analytics/drug-suggestions`, { params },
       )
       .pipe(
-        map(res => {
-          if (!res.success || !res.data) {
-            throw new Error(res.message ?? 'Drug not found.');
-          }
-          const d = res.data;
-          // Flatten nested statistics → flat DrugSearchAnalytics model
-          return {
-            drug_id:              d.drug_id,
-            drug_name:            d.drug_name,
-            avg_price:            d.statistics.average_price,
-            highest_price:        d.statistics.highest_price,
-            lowest_price:         d.statistics.lowest_price,
-            pharmacies_in_stock:  d.statistics.pharmacies_in_stock,
-            pharmacies_carrying:  d.statistics.pharmacies_carrying_drug,
-            availability_percent: d.statistics.availability_percentage,
-          } as DrugSearchAnalytics;
-        }),
+        timeout(8000),
+        map(res => res.suggestions ?? []),
+        catchError(() => of([])),
+      );
+  }
+
+  // ── Admin: pharmacy management ────────────────────────────────────────────
+  getPharmacyList(): Observable<{ pharmacy_id: number; name: string; is_active: boolean }[]> {
+    return this.http
+      .get<{ success: boolean; data: any[] }>(`${BASE}/api/auth/pharmacies`)
+      .pipe(map(r => r.data), catchError(this.handleError));
+  }
+
+  togglePharmacyActive(pharmacyId: number, active: boolean): Observable<any> {
+    return this.http
+      .post<any>(`${BASE}/api/auth/pharmacies/${pharmacyId}/toggle`, { active })
+      .pipe(
+        tap(() => this.invalidateAll()),  // bust cache after change
         catchError(this.handleError),
       );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Centralised HTTP error handler
-  // ─────────────────────────────────────────────────────────────────────────
+  getPharmacyUsers(): Observable<any[]> {
+    return this.http
+      .get<{ success: boolean; data: any[] }>(`${BASE}/api/auth/users`)
+      .pipe(map(r => r.data), catchError(this.handleError));
+  }
 
+  // ── Error handler ─────────────────────────────────────────────────────────
   private handleError(err: HttpErrorResponse | Error): Observable<never> {
     let msg: string;
-
     if (err instanceof HttpErrorResponse) {
-      if (err.status === 0) {
-        msg = `Cannot reach the API server (${BASE || 'localhost:5000'}). `
-            + 'Make sure Flask is running: cd BACK/app && python app.py';
-      } else if (err.status === 400) {
-        msg = err.error?.message ?? 'Bad request — check required parameters.';
-      } else if (err.status === 404) {
-        msg = err.error?.message ?? 'Resource not found.';
-      } else if (err.status === 500) {
-        msg = 'Internal server error — check the Flask console for details.';
-      } else {
-        msg = `Server error ${err.status}: ${err.error?.message ?? err.message}`;
-      }
+      if (err.status === 0)    msg = 'Cannot reach the API server. Is the backend running?';
+      else if (err.status === 401) msg = 'Session expired. Please log in again.';
+      else if (err.status === 403) msg = 'Access denied.';
+      else if (err.status === 400) msg = err.error?.message ?? 'Bad request.';
+      else if (err.status === 404) msg = err.error?.message ?? 'Not found.';
+      else                         msg = `Server error ${err.status}: ${err.error?.message ?? err.message}`;
     } else {
-      msg = err.message;
+      msg = (err as any).name === 'TimeoutError'
+        ? 'Request timed out. The database may be waking up — please try again.'
+        : err.message;
     }
-
     return throwError(() => new Error(msg));
   }
 }

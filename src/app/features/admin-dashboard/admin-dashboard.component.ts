@@ -1,10 +1,11 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DashboardService } from '../../services/dashboard.service';
 import { StatCardComponent } from '../../shared/components/stat-card/stat-card.component';
 import { TrendChartComponent } from '../../shared/components/trend-chart/trend-chart.component';
 import { RankedTableComponent, RankedTableColumn } from '../../shared/components/ranked-table/ranked-table.component';
+import { PharmacyManagementComponent } from './pharmacy-management/pharmacy-management.component';
 import {
   PharmacyTrafficRanking,
   AreaDrugTrend,
@@ -17,12 +18,14 @@ import {
 @Component({
   selector: 'ms-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, StatCardComponent, TrendChartComponent, RankedTableComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, FormsModule, StatCardComponent, TrendChartComponent, RankedTableComponent, PharmacyManagementComponent],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.scss'],
 })
 export class AdminDashboardComponent implements OnInit {
   private svc = inject(DashboardService);
+  private cdr = inject(ChangeDetectorRef);
 
   // Single load state for everything (one API call)
   state: LoadingState = 'idle';
@@ -103,12 +106,13 @@ export class AdminDashboardComponent implements OnInit {
           this.monthlyGov = this.monthlyGovOptions[0];
         }
         this.buildMonthlyChart();
-
         this.state = 'success';
+        this.cdr.markForCheck();
       },
       error: (err: Error) => {
         this.errorMessage = err.message;
         this.state = 'error';
+        this.cdr.markForCheck();
       },
     });
   }
@@ -120,15 +124,17 @@ export class AdminDashboardComponent implements OnInit {
       ? [...new Set(this.allAreaTrends.filter(t => t.governorate === this.selectedGovernorate).map(t => t.city))].sort()
       : [];
     this.applyFilter();
+    this.cdr.markForCheck();
   }
 
-  onCityChange(): void { this.applyFilter(); }
+  onCityChange(): void { this.applyFilter(); this.cdr.markForCheck(); }
 
   clearAreaFilter(): void {
     this.selectedGovernorate = null;
     this.selectedCity = null;
     this.cities = [];
     this.applyFilter();
+    this.cdr.markForCheck();
   }
 
   private applyFilter(): void {
