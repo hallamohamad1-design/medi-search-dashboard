@@ -99,7 +99,7 @@
 
     &__title { font-size: $font-size-xs; text-transform: uppercase; letter-spacing: 0.06em; color: $color-accent-300; margin-bottom: $space-2; }
     &__row   { font-size: $font-size-sm; color: rgba(255,255,255,0.75); margin-bottom: $space-1;
-      strong { color: $color-text-inverse; }
+      .bold { font-weight: $font-weight-semibold; color: $color-text-inverse; }
     }
     &__note  { margin-top: $space-2; font-size: $font-size-xs; color: rgba(255,255,255,0.45);
       code { background: rgba(255,255,255,0.1); padding: 1px 5px; border-radius: 3px; }
