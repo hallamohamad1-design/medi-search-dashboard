@@ -84,10 +84,16 @@
             (click)="switchRole('admin')">Admin</button>
         </div>
       }
-      <a href="https://medi-search-eight.vercel.app" class="sidebar__footer-link">
-        <span aria-hidden="true">🏠</span>
-        @if (!sidebarCollapsed()) { <span>Back to Site</span> }
-      </a>
+      <div class="sidebar__footer-actions">
+        <a href="https://medi-search-eight.vercel.app" class="sidebar__footer-link">
+          <span aria-hidden="true">🏠</span>
+          @if (!sidebarCollapsed()) { <span>Back to Site</span> }
+        </a>
+        <button class="sidebar__footer-link sidebar__logout-btn" (click)="logout()" aria-label="Sign out">
+          <span aria-hidden="true">🚪</span>
+          @if (!sidebarCollapsed()) { <span>Sign Out</span> }
+        </button>
+      </div>
     </div>
 
   </aside>

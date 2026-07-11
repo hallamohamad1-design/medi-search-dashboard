@@ -1,0 +1,242 @@
+@use '../../../styles/design-tokens' as *;
+@use '../../../styles/mixins' as *;
+
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  @include respond-below(md) { grid-template-columns: 1fr; }
+
+  // ── Left brand panel ──────────────────────────────────────────────────────
+  &__brand {
+    background: linear-gradient(145deg, $color-primary-800 0%, $color-primary-900 60%, darken($color-primary-900, 5%) 100%);
+    @include flex-center;
+    padding: $space-12 $space-10;
+    position: relative;
+    overflow: hidden;
+
+    // Decorative circles
+    &::before, &::after {
+      content: '';
+      position: absolute;
+      border-radius: $radius-full;
+      opacity: 0.06;
+      background: $color-text-inverse;
+    }
+    &::before { width: 400px; height: 400px; top: -100px; right: -100px; }
+    &::after  { width: 300px; height: 300px; bottom: -80px; left: -80px; }
+
+    @include respond-below(md) { display: none; }
+  }
+}
+
+.brand-content {
+  position: relative;
+  z-index: 1;
+  max-width: 420px;
+  color: $color-text-inverse;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  margin-bottom: $space-8;
+
+  &__icon { font-size: 2.5rem; }
+  &__text { font-size: $font-size-2xl; font-weight: $font-weight-bold; }
+}
+
+.brand-title {
+  font-size: $font-size-3xl;
+  font-weight: $font-weight-extrabold;
+  line-height: $line-height-tight;
+  margin-bottom: $space-4;
+  color: $color-text-inverse;
+}
+
+.brand-sub {
+  font-size: $font-size-base;
+  color: rgba(255,255,255,0.7);
+  line-height: $line-height-relaxed;
+  margin-bottom: $space-10;
+}
+
+.brand-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $space-4;
+}
+
+.brand-stat {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: $radius-lg;
+  padding: $space-4;
+  text-align: center;
+
+  &__value {
+    display: block;
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-bold;
+    color: $color-accent-300;
+  }
+  &__label {
+    display: block;
+    font-size: $font-size-xs;
+    color: rgba(255,255,255,0.6);
+    margin-top: $space-1;
+  }
+}
+
+// ── Right form panel ─────────────────────────────────────────────────────────
+.login-page__form {
+  background: $color-bg;
+  @include flex-center;
+  padding: $space-8 $space-6;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 460px;
+  background: $color-surface;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-xl;
+  padding: $space-10 $space-8;
+
+  @include respond-below(sm) { padding: $space-6 $space-4; }
+
+  &__header { margin-bottom: $space-8; }
+  &__title  { font-size: $font-size-2xl; font-weight: $font-weight-bold; }
+  &__sub    { margin-top: $space-2; color: $color-text-muted; font-size: $font-size-sm; }
+
+  &__note {
+    margin-top: $space-6;
+    text-align: center;
+    font-size: $font-size-xs;
+    color: $color-text-muted;
+
+    a { color: $color-primary-600; &:hover { text-decoration: underline; } }
+  }
+}
+
+// ── Form elements ─────────────────────────────────────────────────────────────
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-6;
+}
+
+.form-group { display: flex; flex-direction: column; gap: $space-2; }
+
+.form-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+}
+
+.form-input {
+  padding: $space-3 $space-4;
+  border: 1.5px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-base;
+  font-family: $font-family-base;
+  color: $color-text-primary;
+  background: $color-surface;
+  transition: $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary-500;
+    box-shadow: $shadow-focus;
+  }
+  &::placeholder { color: $color-text-muted; }
+}
+
+// ── Role toggle ───────────────────────────────────────────────────────────────
+.role-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-3;
+}
+
+.role-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-4;
+  border: 2px solid $color-border;
+  border-radius: $radius-lg;
+  cursor: pointer;
+  transition: $transition-base;
+  text-align: center;
+
+  &:hover { border-color: $color-primary-300; background: $color-primary-50; }
+
+  &--active {
+    border-color: $color-primary-500;
+    background: $color-primary-50;
+    box-shadow: 0 0 0 3px rgba(26,159,201,0.15);
+  }
+
+  &__icon  { font-size: 1.75rem; }
+  &__label { font-size: $font-size-sm; font-weight: $font-weight-semibold; color: $color-text-primary; }
+  &__sub   { font-size: $font-size-xs; color: $color-text-muted; }
+}
+
+// ── Pharmacy grid ─────────────────────────────────────────────────────────────
+.pharmacy-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-2;
+}
+
+.pharmacy-option {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-3;
+  border: 1.5px solid $color-border;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: $transition-fast;
+
+  &:hover { border-color: $color-primary-300; background: $color-primary-50; }
+
+  &--active {
+    border-color: $color-primary-500;
+    background: $color-primary-50;
+  }
+
+  &__icon { font-size: 1rem; flex-shrink: 0; }
+  &__name { font-size: $font-size-xs; font-weight: $font-weight-medium; color: $color-text-primary; }
+}
+
+// ── Submit button ─────────────────────────────────────────────────────────────
+.login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  padding: $space-4 $space-6;
+  background: linear-gradient(135deg, $color-primary-500, $color-primary-600);
+  color: $color-text-inverse;
+  border: none;
+  border-radius: $radius-lg;
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  font-family: $font-family-base;
+  cursor: pointer;
+  transition: $transition-base;
+  width: 100%;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, $color-primary-600, $color-primary-700);
+    transform: translateY(-1px);
+    box-shadow: $shadow-lg;
+  }
+
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}

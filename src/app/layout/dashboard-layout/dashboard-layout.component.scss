@@ -319,3 +319,23 @@
     }
   }
 }
+
+// Footer actions row
+.sidebar {
+  &__footer-actions {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+  }
+
+  &__logout-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: $font-family-base;
+    width: 100%;
+    color: rgba(255,255,255,0.45);
+    &:hover { color: $color-error; }
+  }
+}

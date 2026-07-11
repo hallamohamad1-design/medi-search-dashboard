@@ -2,7 +2,15 @@ import { Routes } from '@angular/router';
 import { roleGuard } from './guards/role.guard';
 
 export const routes: Routes = [
-  // ── Dashboard shell (sidebar + topbar) ──────────────────────────────────
+  // ── Login page ────────────────────────────────────────────────────────────
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./features/login/login.component').then(m => m.LoginComponent),
+    title: 'Sign In — MediSearch Analytics',
+  },
+
+  // ── Dashboard shell ───────────────────────────────────────────────────────
   {
     path: 'dashboard',
     loadComponent: () =>
@@ -10,7 +18,6 @@ export const routes: Routes = [
         m => m.DashboardLayoutComponent,
       ),
     children: [
-      // Pharmacy dashboard
       {
         path: 'pharmacy',
         loadComponent: () =>
@@ -20,8 +27,6 @@ export const routes: Routes = [
         canActivate: [roleGuard('pharmacy')],
         title: 'Pharmacy Dashboard — MediSearch',
       },
-
-      // Admin dashboard
       {
         path: 'admin',
         loadComponent: () =>
@@ -31,8 +36,6 @@ export const routes: Routes = [
         canActivate: [roleGuard('admin')],
         title: 'Admin Dashboard — MediSearch',
       },
-
-      // Analytics charts
       {
         path: 'analytics',
         loadComponent: () =>
@@ -41,8 +44,6 @@ export const routes: Routes = [
           ),
         title: 'Analytics Charts — MediSearch',
       },
-
-      // Default redirect inside /dashboard
       {
         path: '',
         redirectTo: 'pharmacy',
@@ -51,7 +52,7 @@ export const routes: Routes = [
     ],
   },
 
-  // ── Drug detail demo page (widget showcase) ──────────────────────────────
+  // ── Drug detail demo ──────────────────────────────────────────────────────
   {
     path: 'drug-detail-demo',
     loadComponent: () =>
@@ -61,7 +62,7 @@ export const routes: Routes = [
     title: 'Drug Analytics Widget — MediSearch',
   },
 
-  // ── Unauthorized ─────────────────────────────────────────────────────────
+  // ── Unauthorized ──────────────────────────────────────────────────────────
   {
     path: 'unauthorized',
     loadComponent: () =>
@@ -71,16 +72,16 @@ export const routes: Routes = [
     title: 'Access Denied — MediSearch',
   },
 
-  // ── Root redirect ─────────────────────────────────────────────────────────
+  // ── Root → login ──────────────────────────────────────────────────────────
   {
     path: '',
-    redirectTo: 'dashboard',
+    redirectTo: 'login',
     pathMatch: 'full',
   },
 
-  // ── 404 fallback ─────────────────────────────────────────────────────────
+  // ── 404 fallback ──────────────────────────────────────────────────────────
   {
     path: '**',
-    redirectTo: 'dashboard',
+    redirectTo: 'login',
   },
 ];

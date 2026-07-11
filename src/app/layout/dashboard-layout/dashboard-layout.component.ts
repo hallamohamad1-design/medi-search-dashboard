@@ -57,4 +57,13 @@ export class DashboardLayoutComponent {
     localStorage.setItem('dev_pharmacy', sel);
     window.location.reload();
   }
+
+  /** Logout — clears session and returns to login */
+  logout(): void {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.removeItem('dev_role');
+    localStorage.removeItem('dev_name');
+    localStorage.removeItem('dev_pharmacy');
+    this.router.navigate(['/login']);
+  }
 }
