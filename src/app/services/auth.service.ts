@@ -2,45 +2,51 @@ import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 /**
- * AuthService
+ * AuthService — wire to your real JWT/session system.
  *
- * Wire this to your existing session/JWT implementation.
- * The dashboard reads three things from it:
- *   - isAuthenticated()         → guards routes
- *   - hasRole(role)             → guards pharmacy vs admin routes
- *   - currentUser.pharmacyName  → used as the ?name= query param for the
- *                                  pharmacy analytics API endpoint
+ * Real pharmacies in DB:
+ *   El Ezaby Pharmacy  (pharmacy_id: 1)
+ *   Sehha Pharmacy     (pharmacy_id: 11)
+ *   El Hazim Pharmacy  (pharmacy_id: 7)
+ *   Hind Pharmacy      (pharmacy_id: 9)
  *
  * Dev usage (browser console):
- *   localStorage.setItem('dev_role',     'admin')        // switch to admin
- *   localStorage.setItem('dev_pharmacy', 'El Ezaby Pharmacy') // set pharmacy
+ *   localStorage.setItem('dev_role',     'pharmacy')
+ *   localStorage.setItem('dev_pharmacy', 'El Ezaby Pharmacy')
+ *   localStorage.setItem('dev_role',     'admin')
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private platformId = inject(PLATFORM_ID);
   private get isBrowser(): boolean { return isPlatformBrowser(this.platformId); }
 
+  /** Real pharmacy names from dim_pharmacy table */
+  static readonly PHARMACIES = [
+    'El Ezaby Pharmacy',
+    'Sehha Pharmacy',
+    'El Hazim Pharmacy',
+    'Hind Pharmacy',
+  ];
+
   isAuthenticated(): boolean {
-    // Replace with: return !!this.tokenService.getToken();
-    return true;
+    return true; // replace with real token check
   }
 
   hasRole(role: 'pharmacy' | 'admin'): boolean {
-    if (!this.isBrowser) return true; // SSR: allow prerender
+    if (!this.isBrowser) return true;
     const stored = localStorage.getItem('dev_role') ?? 'pharmacy';
     return stored === role;
   }
 
   get currentUser(): { name: string; role: string; pharmacyName?: string } {
     if (!this.isBrowser) {
-      return { name: 'System', role: 'pharmacy', pharmacyName: '' };
+      return { name: 'System', role: 'pharmacy', pharmacyName: 'El Ezaby Pharmacy' };
     }
     const role         = localStorage.getItem('dev_role')     ?? 'pharmacy';
     const pharmacyName = localStorage.getItem('dev_pharmacy') ?? 'El Ezaby Pharmacy';
     return {
       name:         localStorage.getItem('dev_name') ?? 'Demo User',
       role,
-      // Only expose pharmacyName for pharmacy role; admins don't have one
       pharmacyName: role === 'pharmacy' ? pharmacyName : undefined,
     };
   }

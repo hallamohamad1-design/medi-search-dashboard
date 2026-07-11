@@ -2,9 +2,10 @@
 
   <!-- Sidebar -->
   <aside class="sidebar" role="navigation" aria-label="Dashboard navigation">
+
     <!-- Brand -->
     <div class="sidebar__brand">
-      <a href="/" class="sidebar__logo" aria-label="MediSearch home">
+      <a href="https://medi-search-eight.vercel.app" class="sidebar__logo" aria-label="MediSearch home">
         <span class="sidebar__logo-icon" aria-hidden="true">💊</span>
         @if (!sidebarCollapsed()) {
           <span class="sidebar__logo-text">MediSearch</span>
@@ -31,10 +32,22 @@
             <span class="badge badge--primary">{{ auth.currentUser.role | titlecase }}</span>
           </p>
           @if (auth.currentUser.pharmacyName) {
-            <p class="sidebar__user-pharmacy">{{ auth.currentUser.pharmacyName }}</p>
+            <p class="sidebar__user-pharmacy">🏥 {{ auth.currentUser.pharmacyName }}</p>
           }
         </div>
       </div>
+
+      <!-- Pharmacy switcher (dev helper — remove when real auth is wired) -->
+      @if (auth.currentUser.role === 'pharmacy') {
+        <div class="sidebar__pharmacy-switch">
+          <label class="sidebar__switch-label">Switch Pharmacy</label>
+          <select class="sidebar__switch-select" (change)="switchPharmacy($event)">
+            @for (p of pharmacyOptions; track p) {
+              <option [value]="p" [selected]="p === auth.currentUser.pharmacyName">{{ p }}</option>
+            }
+          </select>
+        </div>
+      }
     }
 
     <!-- Nav -->
@@ -60,11 +73,23 @@
 
     <!-- Footer -->
     <div class="sidebar__footer">
-      <a href="/" class="sidebar__footer-link">
+      @if (!sidebarCollapsed()) {
+        <!-- Role switcher -->
+        <div class="sidebar__role-switch">
+          <button class="sidebar__role-btn"
+            [class.sidebar__role-btn--active]="auth.currentUser.role === 'pharmacy'"
+            (click)="switchRole('pharmacy')">Pharmacy</button>
+          <button class="sidebar__role-btn"
+            [class.sidebar__role-btn--active]="auth.currentUser.role === 'admin'"
+            (click)="switchRole('admin')">Admin</button>
+        </div>
+      }
+      <a href="https://medi-search-eight.vercel.app" class="sidebar__footer-link">
         <span aria-hidden="true">🏠</span>
         @if (!sidebarCollapsed()) { <span>Back to Site</span> }
       </a>
     </div>
+
   </aside>
 
   <!-- Main area -->
@@ -82,20 +107,20 @@
           <span>Dashboard</span>
           <span class="topbar__breadcrumb-sep" aria-hidden="true">/</span>
           <span class="topbar__breadcrumb-active">
-            {{ auth.currentUser.role === 'admin' ? 'Admin' : 'Pharmacy' }}
+            {{ auth.currentUser.role === 'admin' ? 'Admin' : auth.currentUser.pharmacyName ?? 'Pharmacy' }}
           </span>
         </div>
       </div>
 
       <div class="topbar__right">
-        <span class="topbar__refresh-note" title="Data refreshes daily at midnight">
-          🔄 Daily refresh
+        <span class="topbar__refresh-note" title="Data refreshes daily">
+          🔄 Live data
         </span>
         <div class="topbar__user-chip">
           <span class="topbar__user-avatar" aria-hidden="true">
             {{ auth.currentUser.name.charAt(0).toUpperCase() }}
           </span>
-          <span class="topbar__user-name">{{ auth.currentUser.name }}</span>
+          <span class="topbar__user-name">{{ auth.currentUser.pharmacyName ?? auth.currentUser.name }}</span>
         </div>
       </div>
     </header>

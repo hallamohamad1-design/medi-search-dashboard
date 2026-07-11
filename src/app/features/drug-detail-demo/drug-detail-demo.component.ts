@@ -12,13 +12,15 @@ import { DrugSearchAnalyticsComponent } from '../../shared/components/drug-searc
   styleUrls: ['./drug-detail-demo.component.scss'],
 })
 export class DrugDetailDemoComponent {
-  // Real drug names from the database
+  // Real drug names exactly as stored in dim_drug.name
   demoOptions = [
     'Panadol Advance',
     'Acti Colla C Advanced-10 Sachets',
     'Brufen 200 mg-30 Tablets',
     'Mepafuran 100 mg-20 Capsules',
-    'Corega Denture Fixative Cream Taste Free',
+    'Bioderma Sensibio Forte Cream-Reddened Sensitive Skin-40ml',
+    'Mebo 0.25 % Ointment-15gm',
+    'Cerebromap 200 mg-30 Capsules',
   ];
 
   selectedDrugName = this.demoOptions[0];

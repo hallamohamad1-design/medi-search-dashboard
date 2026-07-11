@@ -258,3 +258,64 @@
     }
   }
 }
+
+// Pharmacy switcher (dev helper in sidebar)
+.sidebar {
+  &__pharmacy-switch {
+    padding: $space-2 $space-5 $space-3;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  &__switch-label {
+    display: block;
+    font-size: $font-size-xs;
+    color: rgba(255,255,255,0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: $space-1;
+  }
+
+  &__switch-select {
+    width: 100%;
+    padding: $space-2 $space-3;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: $radius-md;
+    color: $color-text-inverse;
+    font-size: $font-size-xs;
+    font-family: $font-family-base;
+    cursor: pointer;
+    appearance: none;
+
+    &:focus { outline: none; border-color: $color-accent-400; }
+    option  { background: $color-primary-800; color: $color-text-inverse; }
+  }
+
+  // Role switcher buttons
+  &__role-switch {
+    display: flex;
+    gap: $space-1;
+    margin-bottom: $space-3;
+  }
+
+  &__role-btn {
+    flex: 1;
+    padding: $space-1 $space-2;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: $radius-md;
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    font-size: $font-size-xs;
+    font-family: $font-family-base;
+    cursor: pointer;
+    transition: $transition-fast;
+
+    &:hover { background: rgba(255,255,255,0.08); color: $color-text-inverse; }
+
+    &--active {
+      background: $color-accent-500;
+      border-color: $color-accent-500;
+      color: $color-text-inverse;
+    }
+  }
+}
