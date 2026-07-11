@@ -1,11 +1,11 @@
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, withViewTransitions, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { provideClientHydration } from '@angular/platform-browser';
 
 import { routes } from './app.routes';
+import { apiInterceptor } from './interceptors/api.interceptor';
 
-// Chart.js — register all components globally so ng2-charts can use them
+// ── Chart.js global registration ──────────────────────────────────────────
 import {
   Chart,
   CategoryScale,
@@ -53,7 +53,9 @@ export const appConfig: ApplicationConfig = {
       withViewTransitions(),
       withComponentInputBinding(),
     ),
-    provideHttpClient(withFetch()),
-    provideClientHydration(),
+    provideHttpClient(
+      withFetch(),
+      withInterceptors([apiInterceptor]),
+    ),
   ],
 };

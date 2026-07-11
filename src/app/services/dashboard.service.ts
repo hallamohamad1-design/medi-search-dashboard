@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError, forkJoin } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { catchError, map, shareReplay } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 import {
@@ -24,19 +24,23 @@ import {
 const BASE = environment.apiUrl;
 
 /**
- * DashboardService
+ * DashboardService — single source of truth for all API calls.
  *
- * All methods call the real Flask API.
- * Error handling: every Observable surfaces a meaningful string so
- * components can display it directly without extra parsing.
+ * Endpoints wired:
+ *   GET /api/analytics/pharmacy/analytics?name=<name>
+ *   GET /api/analytics/pharmacy/low-stock
+ *   GET /api/analytics/admin
+ *   GET /api/analytics/drug-search?name=<name>
  */
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
   private http = inject(HttpClient);
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Pharmacy Dashboard
-  // GET /api/analytics/pharmacy/analytics?name=<pharmacy_name>
+  // Pharmacy  →  GET /api/analytics/pharmacy/analytics?name=<pharmacyName>
+  //
+  // Response envelope:  { success, data: { pharmacy_id, pharmacy_name,
+  //                       page_traffic[], drug_trends[] } }
   // ─────────────────────────────────────────────────────────────────────────
 
   getPharmacyAnalytics(pharmacyName: string): Observable<PharmacyAnalyticsResponse> {
@@ -48,30 +52,31 @@ export class DashboardService {
       )
       .pipe(
         map(res => {
-          if (!res.success || !res.data) throw new Error(res.message ?? 'Pharmacy not found.');
+          if (!res.success || !res.data) {
+            throw new Error(res.message ?? 'Pharmacy not found.');
+          }
           return res.data;
         }),
         catchError(this.handleError),
       );
   }
 
-  /** Convenience: just the traffic array */
+  /** Just the page_traffic array */
   getPharmacyTraffic(pharmacyName: string): Observable<PageTrafficPoint[]> {
-    return this.getPharmacyAnalytics(pharmacyName).pipe(
-      map(r => r.page_traffic),
-    );
+    return this.getPharmacyAnalytics(pharmacyName).pipe(map(r => r.page_traffic));
   }
 
-  /** Convenience: just the drug trends array */
+  /** Just the drug_trends array */
   getLocalDrugTrends(pharmacyName: string): Observable<LocalDrugTrend[]> {
-    return this.getPharmacyAnalytics(pharmacyName).pipe(
-      map(r => r.drug_trends),
-    );
+    return this.getPharmacyAnalytics(pharmacyName).pipe(map(r => r.drug_trends));
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Low stock & missing drugs
-  // GET /api/analytics/pharmacy/low-stock
+  // Low-stock  →  GET /api/analytics/pharmacy/low-stock
+  //
+  // Response (NOT wrapped in { data }):
+  //   { success, low_stock_drugs: { count, data[] },
+  //               high_demand_missing_drugs: { count, data[] } }
   // ─────────────────────────────────────────────────────────────────────────
 
   getLowStock(): Observable<LowStockResponse> {
@@ -89,8 +94,11 @@ export class DashboardService {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Admin Dashboard — single call returns all admin data
-  // GET /api/analytics/admin
+  // Admin  →  GET /api/analytics/admin
+  //
+  // Response envelope:  { success, data: { pharmacy_ranking[],
+  //                        area_drug_trends[], top_searched_drugs[],
+  //                        monthly_report[] } }
   // ─────────────────────────────────────────────────────────────────────────
 
   getAdminAnalytics(): Observable<AdminAnalyticsResponse> {
@@ -98,27 +106,21 @@ export class DashboardService {
       .get<ApiResponse<AdminAnalyticsResponse>>(`${BASE}/api/analytics/admin`)
       .pipe(
         map(res => {
-          if (!res.success || !res.data) throw new Error(res.message ?? 'Failed to load admin data.');
+          if (!res.success || !res.data) {
+            throw new Error(res.message ?? 'Failed to load admin analytics.');
+          }
           return res.data;
         }),
+        // shareReplay(1) so multiple widgets on the admin page share one HTTP call
+        shareReplay(1),
         catchError(this.handleError),
       );
   }
 
-  /** Convenience wrappers used by analytics-charts */
+  // ── Convenience slices of admin data ─────────────────────────────────────
+
   getPharmacyTrafficRanking(): Observable<PharmacyTrafficRanking[]> {
     return this.getAdminAnalytics().pipe(map(r => r.pharmacy_ranking));
-  }
-
-  getAreaDrugTrends(governorate?: string, city?: string): Observable<AreaDrugTrend[]> {
-    return this.getAdminAnalytics().pipe(
-      map(r => {
-        let trends = r.area_drug_trends;
-        if (governorate) trends = trends.filter(t => t.governorate === governorate);
-        if (city)        trends = trends.filter(t => t.city === city);
-        return trends;
-      }),
-    );
   }
 
   getTopSearchedDrugs(): Observable<TopSearchedDrug[]> {
@@ -129,29 +131,48 @@ export class DashboardService {
     return this.getAdminAnalytics().pipe(map(r => r.monthly_report));
   }
 
-  /** Unique governorates extracted from area_drug_trends */
+  /**
+   * Area trends with optional client-side filtering.
+   * Filtering happens on the already-fetched admin payload to avoid extra HTTP calls.
+   */
+  getAreaDrugTrends(governorate?: string, city?: string): Observable<AreaDrugTrend[]> {
+    return this.getAdminAnalytics().pipe(
+      map(r => {
+        let t = r.area_drug_trends;
+        if (governorate) t = t.filter(x => x.governorate === governorate);
+        if (city)        t = t.filter(x => x.city === city);
+        return t;
+      }),
+    );
+  }
+
+  /** Unique governorates from area_drug_trends */
   getGovernorates(): Observable<string[]> {
     return this.getAdminAnalytics().pipe(
-      map(r => [...new Set(r.area_drug_trends.map(t => t.governorate))].sort()),
+      map(r => [...new Set(r.area_drug_trends.map(x => x.governorate))].sort()),
     );
   }
 
   /** Cities within a governorate */
   getCities(governorate: string): Observable<string[]> {
     return this.getAdminAnalytics().pipe(
-      map(r => [
-        ...new Set(
+      map(r =>
+        [...new Set(
           r.area_drug_trends
-            .filter(t => t.governorate === governorate)
-            .map(t => t.city),
-        ),
-      ].sort()),
+            .filter(x => x.governorate === governorate)
+            .map(x => x.city),
+        )].sort(),
+      ),
     );
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Drug Search Analytics Widget
-  // GET /api/analytics/drug-search?name=<drug_name>
+  // Drug analytics widget  →  GET /api/analytics/drug-search?name=<name>
+  //
+  // Response envelope:  { success, data: { drug_name, drug_id,
+  //                        statistics: { average_price, highest_price,
+  //                        lowest_price, pharmacies_in_stock,
+  //                        pharmacies_carrying_drug, availability_percentage } } }
   // ─────────────────────────────────────────────────────────────────────────
 
   getDrugAnalyticsByName(drugName: string): Observable<DrugSearchAnalytics> {
@@ -163,9 +184,11 @@ export class DashboardService {
       )
       .pipe(
         map(res => {
-          if (!res.success || !res.data) throw new Error(res.message ?? 'Drug not found.');
+          if (!res.success || !res.data) {
+            throw new Error(res.message ?? 'Drug not found.');
+          }
           const d = res.data;
-          // Flatten the nested statistics object into our widget model
+          // Flatten nested statistics → flat DrugSearchAnalytics model
           return {
             drug_id:              d.drug_id,
             drug_name:            d.drug_name,
@@ -181,31 +204,23 @@ export class DashboardService {
       );
   }
 
-  // Keep backward-compatible signature used by the widget (by drug id — not supported
-  // by the API; we look up by name instead; this overload is kept for the demo page)
-  getDrugAnalytics(drugId: number): Observable<DrugSearchAnalytics> {
-    // The API only supports name-based lookup; drugId is not exposed as a query param.
-    // The demo page now uses getDrugAnalyticsByName() directly.
-    // This stub preserves the existing widget interface signature.
-    return throwError(() => new Error(
-      'The drug analytics API requires a drug name, not an ID. ' +
-      'Use getDrugAnalyticsByName(name) instead.'
-    ));
-  }
+  // ─────────────────────────────────────────────────────────────────────────
+  // Centralised HTTP error handler
+  // ─────────────────────────────────────────────────────────────────────────
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Error handler
-  // ─────────────────────────────────────────────────────────────────────────
   private handleError(err: HttpErrorResponse | Error): Observable<never> {
     let msg: string;
 
     if (err instanceof HttpErrorResponse) {
       if (err.status === 0) {
-        msg = 'Cannot reach the API server. Make sure the Flask backend is running on ' + BASE;
+        msg = `Cannot reach the API server (${BASE || 'localhost:5000'}). `
+            + 'Make sure Flask is running: cd BACK/app && python app.py';
+      } else if (err.status === 400) {
+        msg = err.error?.message ?? 'Bad request — check required parameters.';
       } else if (err.status === 404) {
         msg = err.error?.message ?? 'Resource not found.';
-      } else if (err.status === 400) {
-        msg = err.error?.message ?? 'Bad request.';
+      } else if (err.status === 500) {
+        msg = 'Internal server error — check the Flask console for details.';
       } else {
         msg = `Server error ${err.status}: ${err.error?.message ?? err.message}`;
       }
