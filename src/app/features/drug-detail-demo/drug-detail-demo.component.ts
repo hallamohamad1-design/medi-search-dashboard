@@ -12,13 +12,13 @@ import { DrugSearchAnalyticsComponent } from '../../shared/components/drug-searc
   styleUrls: ['./drug-detail-demo.component.scss'],
 })
 export class DrugDetailDemoComponent {
-  // Preset names from the real DB (matches dim_drug.name exactly)
+  // Real drug names from the database
   demoOptions = [
-    'Panadol Extra',
-    'Augmentin 625',
-    'Brufen 400mg',
-    'Omeprazole 20mg',
-    'Concor 5mg',
+    'Panadol Advance',
+    'Acti Colla C Advanced-10 Sachets',
+    'Brufen 200 mg-30 Tablets',
+    'Mepafuran 100 mg-20 Capsules',
+    'Corega Denture Fixative Cream Taste Free',
   ];
 
   selectedDrugName = this.demoOptions[0];
