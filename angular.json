@@ -92,6 +92,21 @@
               "sourceMap": true,
               "prerender": false,
               "ssr": false
+            },
+            "vercel": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ],
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": false,
+              "namedChunks": false,
+              "outputHashing": "all",
+              "prerender": false,
+              "ssr": false
             }
           },
           "defaultConfiguration": "production"
