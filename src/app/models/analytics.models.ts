@@ -1,65 +1,124 @@
 // =============================================================================
 // Analytics Domain Models
-// These interfaces match the exact API response shapes described in the spec.
+// Matched exactly to the Flask API response shapes.
 // =============================================================================
 
 // ---------------------------------------------------------------------------
-// Pharmacy Dashboard
+// Generic API envelope — every endpoint wraps its payload in this
+// ---------------------------------------------------------------------------
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Pharmacy Dashboard  — GET /api/analytics/pharmacy/analytics?name=<name>
 // ---------------------------------------------------------------------------
 
-/** Page traffic over time — used for the pharmacy traffic line/area chart */
 export interface PageTrafficPoint {
-  date_key: string;   // e.g. "2024-01-15"
-  day_name: string;   // e.g. "Monday"
+  date_key: string;        // "2024-06-01"
+  day_name: string;        // "Monday"
   number_of_views: number;
 }
 
-/** Drug search trend within the pharmacy's own area (last 30 days) */
 export interface LocalDrugTrend {
   drug_id: number;
-  drug_name: string;
+  drug_name: string;       // NOTE: field is drug_name (not name)
   total_searches: number;
 }
 
+export interface PharmacyAnalyticsResponse {
+  pharmacy_id: number;
+  pharmacy_name: string;
+  page_traffic: PageTrafficPoint[];
+  drug_trends: LocalDrugTrend[];
+}
+
 // ---------------------------------------------------------------------------
-// Admin Dashboard
+// Low-stock  — GET /api/analytics/pharmacy/low-stock
 // ---------------------------------------------------------------------------
 
-/** Per-pharmacy traffic ranking (last 30 days) */
+export interface LowStockDrug {
+  drug_id: number;
+  name: string;
+  pharmacies_in_stock: number;
+}
+
+export interface MissingDrug {
+  pharmacy_id: number;
+  pharmacy_name: string;
+  drug_id: number;
+  drug_name: string;
+  city: string;
+  governorate: string;
+  total_searches: number;
+}
+
+export interface LowStockResponse {
+  success: boolean;
+  low_stock_drugs: { count: number; data: LowStockDrug[] };
+  high_demand_missing_drugs: { count: number; data: MissingDrug[] };
+}
+
+// ---------------------------------------------------------------------------
+// Admin Dashboard  — GET /api/analytics/admin
+// ---------------------------------------------------------------------------
+
 export interface PharmacyTrafficRanking {
   pharmacy_id: number;
   name: string;
   total_views: number;
 }
 
-/** Area-level drug search trend — filterable by governorate/city */
 export interface AreaDrugTrend {
   governorate: string;
   city: string;
   drug_id: number;
-  name: string;
+  drug_name: string;        // NOTE: field is drug_name (not name)
   total_searches: number;
 }
 
-/** System-wide top searched drugs */
 export interface TopSearchedDrug {
   drug_id: number;
   name: string;
   total_searches: number;
 }
 
-/** Monthly period-over-period search volume (stretch goal) */
 export interface MonthlySearchVolume {
   year: number;
-  month: number;        // 1–12
+  month: number;
   governorate: string;
   total_searches: number;
 }
 
+export interface AdminAnalyticsResponse {
+  pharmacy_ranking: PharmacyTrafficRanking[];
+  area_drug_trends: AreaDrugTrend[];
+  top_searched_drugs: TopSearchedDrug[];
+  monthly_report: MonthlySearchVolume[];
+}
+
 // ---------------------------------------------------------------------------
-// Search Analytics Widget (embedded in drug detail page)
+// Drug Search Analytics Widget  — GET /api/analytics/drug-search?name=<name>
 // ---------------------------------------------------------------------------
 
+export interface DrugStatistics {
+  average_price: number;
+  highest_price: number;
+  lowest_price: number;
+  pharmacies_in_stock: number;
+  pharmacies_carrying_drug: number;
+  availability_percentage: number;   // 0–100
+}
+
+export interface DrugSearchAnalyticsResponse {
+  drug_name: string;
+  drug_id: number;
+  statistics: DrugStatistics;
+}
+
+// Flattened version used inside the widget component
 export interface DrugSearchAnalytics {
   drug_id: number;
   drug_name: string;
@@ -68,13 +127,12 @@ export interface DrugSearchAnalytics {
   lowest_price: number;
   pharmacies_in_stock: number;
   pharmacies_carrying: number;
-  availability_percent: number;   // 0–100
+  availability_percent: number;
 }
 
 // ---------------------------------------------------------------------------
 // UI helpers
 // ---------------------------------------------------------------------------
-
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 
 export interface ApiError {
@@ -89,7 +147,6 @@ export interface SortConfig {
   direction: SortDirection;
 }
 
-// Filter model used in admin area-trend view
 export interface AreaFilter {
   governorate: string | null;
   city: string | null;

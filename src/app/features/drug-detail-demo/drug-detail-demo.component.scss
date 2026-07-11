@@ -2,14 +2,12 @@
 @use '../../../styles/mixins' as *;
 
 .demo-page {
-  max-width: 760px;
+  max-width: 780px;
   margin: 0 auto;
-  padding: $space-8 $space-6;
   display: flex;
   flex-direction: column;
   gap: $space-6;
-
-  @include respond-below(md) { padding: $space-4; }
+  @include respond-below(md) { padding: $space-2; }
 }
 
 .demo-header {
@@ -33,13 +31,36 @@
 .demo-picker {
   display: flex;
   align-items: center;
-  gap: $space-3;
+  gap: $space-2;
   flex-wrap: wrap;
-
-  &__label { font-size: $font-size-sm; color: $color-text-muted; }
+  &__label { font-size: $font-size-sm; color: $color-text-muted; margin-right: $space-1; }
 }
 
-// Usage snippet
+.demo-search {
+  display: flex;
+  gap: $space-3;
+
+  &__input {
+    flex: 1;
+    padding: $space-2 $space-4;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    font-size: $font-size-sm;
+    font-family: $font-family-base;
+    color: $color-text-primary;
+    background: $color-surface;
+    transition: $transition-fast;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary-500;
+      box-shadow: $shadow-focus;
+    }
+
+    &::placeholder { color: $color-text-muted; }
+  }
+}
+
 .usage-snippet {
   @include card($space-4);
 

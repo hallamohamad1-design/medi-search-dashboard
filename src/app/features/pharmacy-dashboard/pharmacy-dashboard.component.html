@@ -4,52 +4,35 @@
   <header class="page-header">
     <div>
       <h1 class="page-header__title" id="dash-title">Pharmacy Analytics</h1>
-      <p class="page-header__sub">
-        Your pharmacy's performance · Last 30 days · Refreshes daily
-      </p>
+      <p class="page-header__sub">{{ pharmacyName }} · Last 30 days · Refreshes daily</p>
     </div>
-    <div class="page-header__badge">
-      <span class="badge badge--success">● Live</span>
-    </div>
+    <span class="badge badge--success">● Live</span>
   </header>
 
-  <!-- Stat cards row -->
+  <!-- Stat cards -->
   <div class="stats-grid" role="list">
     <div role="listitem">
-      <ms-stat-card
-        icon="👁️"
-        label="Total Views (30d)"
+      <ms-stat-card icon="👁️" label="Total Views (30d)"
         [value]="trafficState !== 'loading' ? (totalViews | number) ?? '' : ''"
-        [loading]="trafficState === 'loading'"
-        variant="primary"
-        trendLabel="vs prev period">
+        [loading]="trafficState === 'loading'" variant="primary">
       </ms-stat-card>
     </div>
     <div role="listitem">
-      <ms-stat-card
-        icon="📅"
-        label="Avg Daily Views"
+      <ms-stat-card icon="📅" label="Avg Daily Views"
         [value]="trafficState !== 'loading' ? (avgDailyViews | number) ?? '' : ''"
-        [loading]="trafficState === 'loading'"
-        variant="info">
+        [loading]="trafficState === 'loading'" variant="info">
       </ms-stat-card>
     </div>
     <div role="listitem">
-      <ms-stat-card
-        icon="🏆"
-        label="Peak Day"
+      <ms-stat-card icon="🏆" label="Peak Day"
         [value]="trafficState !== 'loading' ? peakDay : ''"
-        [loading]="trafficState === 'loading'"
-        variant="warning">
+        [loading]="trafficState === 'loading'" variant="warning">
       </ms-stat-card>
     </div>
     <div role="listitem">
-      <ms-stat-card
-        icon="💊"
-        label="Top Searched Drug"
+      <ms-stat-card icon="💊" label="Top Searched Drug"
         [value]="trendsState !== 'loading' ? topDrug : ''"
-        [loading]="trendsState === 'loading'"
-        variant="success"
+        [loading]="trendsState === 'loading'" variant="success"
         sublabel="in your area (30d)">
       </ms-stat-card>
     </div>
@@ -63,35 +46,30 @@
         <p class="card__sub">Daily views for your pharmacy profile</p>
       </div>
     </div>
-
     @if (isTrafficError) {
       <div class="error-state" role="alert">
         <span class="error-state__icon" aria-hidden="true">⚠️</span>
         <p class="error-state__title">{{ trafficError }}</p>
       </div>
     } @else {
-      <ms-trend-chart
-        datasetLabel="Page Views"
-        [labels]="trafficLabels"
-        [data]="trafficData"
-        [loading]="trafficState === 'loading'"
-        [height]="300"
-        color="#1a9fc9"
-        [fill]="true">
+      <ms-trend-chart datasetLabel="Page Views"
+        [labels]="trafficLabels" [data]="trafficData"
+        [loading]="trafficState === 'loading'" [height]="300"
+        color="#1a9fc9" [fill]="true">
       </ms-trend-chart>
     }
   </article>
 
-  <!-- Drug trends section -->
+  <!-- Drug trends -->
   <article class="card" aria-label="Local drug search trends">
     <div class="card__header">
       <div>
         <h2 class="card__title">Drug Search Trends — Your Area</h2>
-        <p class="card__sub">Most-searched drugs near your pharmacy (last 30 days) — useful for stocking decisions</p>
+        <p class="card__sub">Most-searched drugs near your pharmacy (last 30 days)</p>
       </div>
       <div class="card__actions">
-        <button class="btn btn--secondary btn--sm" (click)="toggleTrendsView()" aria-label="Toggle chart / table view">
-          {{ trendsChartType === 'horizontalBar' ? '📋 Table' : '📊 Chart' }}
+        <button class="btn btn--secondary btn--sm" (click)="toggleTrendsView()">
+          {{ trendsView === 'chart' ? '📋 Table' : '📊 Chart' }}
         </button>
       </div>
     </div>
@@ -101,29 +79,60 @@
         <span class="error-state__icon" aria-hidden="true">⚠️</span>
         <p class="error-state__title">{{ trendsError }}</p>
       </div>
-    } @else if (trendsChartType !== 'bar') {
-      <!-- Chart view -->
-      <ms-trend-chart
-        datasetLabel="Searches"
-        [labels]="trendsChartLabels"
-        [data]="trendsChartData"
-        [loading]="isTrendsLoading"
-        chartType="horizontalBar"
-        [height]="320"
-        color="#12c09a"
-        [fill]="false">
+    } @else if (trendsView === 'chart') {
+      <ms-trend-chart datasetLabel="Searches"
+        [labels]="trendsChartLabels" [data]="trendsChartData"
+        [loading]="isTrendsLoading" chartType="horizontalBar"
+        [height]="320" color="#12c09a" [fill]="false">
       </ms-trend-chart>
     } @else {
-      <!-- Table view -->
-      <ms-ranked-table
-        [columns]="trendsColumns"
-        [rows]="localTrends"
-        [loading]="isTrendsLoading"
-        [error]="isTrendsError"
+      <ms-ranked-table [columns]="trendsColumns" [rows]="localTrends"
+        [loading]="isTrendsLoading" [error]="isTrendsError"
         [errorMessage]="trendsError"
         emptyMessage="No drug searches recorded in your area yet.">
       </ms-ranked-table>
     }
   </article>
+
+  <!-- Low stock & high-demand missing drugs -->
+  <div class="two-col">
+
+    <!-- Low stock -->
+    <article class="card" aria-label="Low stock drugs">
+      <div class="card__header">
+        <div>
+          <h2 class="card__title">⚠️ Low Stock Alert</h2>
+          <p class="card__sub">Drugs with fewer than 3 pharmacies currently in stock</p>
+        </div>
+        @if (!isLowStockLoading && lowStockDrugs.length) {
+          <span class="badge badge--error">{{ lowStockDrugs.length }} drugs</span>
+        }
+      </div>
+      <ms-ranked-table [columns]="lowStockColumns" [rows]="lowStockDrugs"
+        [loading]="isLowStockLoading" [error]="isLowStockError"
+        [errorMessage]="lowStockError"
+        emptyMessage="No low-stock alerts — all drugs are well stocked!">
+      </ms-ranked-table>
+    </article>
+
+    <!-- High-demand missing drugs -->
+    <article class="card" aria-label="High demand missing drugs">
+      <div class="card__header">
+        <div>
+          <h2 class="card__title">🔍 Stocking Opportunities</h2>
+          <p class="card__sub">Frequently searched drugs not in stock at your pharmacy</p>
+        </div>
+        @if (!isLowStockLoading && missingDrugs.length) {
+          <span class="badge badge--warning">{{ missingDrugs.length }} items</span>
+        }
+      </div>
+      <ms-ranked-table [columns]="missingColumns" [rows]="missingDrugs"
+        [loading]="isLowStockLoading" [error]="isLowStockError"
+        [errorMessage]="lowStockError"
+        emptyMessage="Your pharmacy stocks all high-demand drugs in your area!">
+      </ms-ranked-table>
+    </article>
+
+  </div>
 
 </section>

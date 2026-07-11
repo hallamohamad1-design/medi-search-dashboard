@@ -10,70 +10,44 @@ import {
   AreaDrugTrend,
   TopSearchedDrug,
   MonthlySearchVolume,
+  AdminAnalyticsResponse,
   LoadingState,
 } from '../../models/analytics.models';
 
 @Component({
   selector: 'ms-admin-dashboard',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    StatCardComponent,
-    TrendChartComponent,
-    RankedTableComponent,
-  ],
+  imports: [CommonModule, FormsModule, StatCardComponent, TrendChartComponent, RankedTableComponent],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.scss'],
 })
 export class AdminDashboardComponent implements OnInit {
   private svc = inject(DashboardService);
 
-  // ---- Pharmacy traffic ranking
-  rankingState: LoadingState = 'idle';
+  // Single load state for everything (one API call)
+  state: LoadingState = 'idle';
+  errorMessage = '';
+
+  // Raw data
   pharmacyRanking: PharmacyTrafficRanking[] = [];
-  rankingError = '';
-  rankingColumns: RankedTableColumn[] = [
-    { field: 'name',        header: 'Pharmacy',      sortable: true },
-    { field: 'total_views', header: 'Total Views',   sortable: true, align: 'right', format: 'number' },
-  ];
+  allAreaTrends:   AreaDrugTrend[] = [];
+  filteredTrends:  AreaDrugTrend[] = [];
+  topDrugs:        TopSearchedDrug[] = [];
+  monthlyData:     MonthlySearchVolume[] = [];
 
-  // ---- Area drug trends
-  areaTrendsState: LoadingState = 'idle';
-  areaTrends: AreaDrugTrend[] = [];
-  areaTrendsError = '';
-  areaTrendsColumns: RankedTableColumn[] = [
-    { field: 'name',           header: 'Drug',          sortable: true },
-    { field: 'governorate',    header: 'Governorate',   sortable: true },
-    { field: 'city',           header: 'City',          sortable: true },
-    { field: 'total_searches', header: 'Searches',      sortable: true, align: 'right', format: 'number' },
-  ];
-
-  // Area filter state
+  // Area filter
   governorates: string[] = [];
   cities: string[] = [];
   selectedGovernorate: string | null = null;
   selectedCity: string | null = null;
 
-  // ---- Top drugs
-  topDrugsState: LoadingState = 'idle';
-  topDrugs: TopSearchedDrug[] = [];
-  topDrugsError = '';
-  topDrugsColumns: RankedTableColumn[] = [
-    { field: 'name',           header: 'Drug Name',     sortable: true },
-    { field: 'total_searches', header: 'Total Searches', sortable: true, align: 'right', format: 'number' },
-  ];
-
-  // ---- Monthly volume (stretch goal)
-  monthlyState: LoadingState = 'idle';
-  monthlyData: MonthlySearchVolume[] = [];
-  monthlyError = '';
-  monthlyChartLabels: string[] = [];
-  monthlyChartData: number[] = [];
+  // Monthly chart
   monthlyGov: string | null = null;
   monthlyGovOptions: string[] = [];
+  monthlyChartLabels: string[] = [];
+  monthlyChartData: number[] = [];
 
-  // ---- Summary stats
+  // Summary KPIs
   totalPharmacies = 0;
   totalSystemViews = 0;
   totalSystemSearches = 0;
@@ -81,123 +55,94 @@ export class AdminDashboardComponent implements OnInit {
 
   readonly MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+  // Table columns
+  rankingColumns: RankedTableColumn[] = [
+    { field: 'name',        header: 'Pharmacy',    sortable: true },
+    { field: 'total_views', header: 'Total Views', sortable: true, align: 'right', format: 'number' },
+  ];
+
+  areaTrendsColumns: RankedTableColumn[] = [
+    { field: 'drug_name',      header: 'Drug',        sortable: true },
+    { field: 'governorate',    header: 'Governorate', sortable: true },
+    { field: 'city',           header: 'City',        sortable: true },
+    { field: 'total_searches', header: 'Searches',    sortable: true, align: 'right', format: 'number' },
+  ];
+
+  topDrugsColumns: RankedTableColumn[] = [
+    { field: 'name',           header: 'Drug Name',     sortable: true },
+    { field: 'total_searches', header: 'Total Searches', sortable: true, align: 'right', format: 'number' },
+  ];
+
   ngOnInit(): void {
-    this.loadRanking();
-    this.loadGovernorates();
-    this.loadAreaTrends();
-    this.loadTopDrugs();
-    this.loadMonthlyVolume();
+    this.load();
   }
 
-  // ---------------------------------------------------------------------------
-  private loadRanking(): void {
-    this.rankingState = 'loading';
-    this.svc.getPharmacyTrafficRanking().subscribe({
-      next: (data) => {
-        this.pharmacyRanking = data;
-        this.totalPharmacies = data.length;
-        this.totalSystemViews = data.reduce((s, d) => s + d.total_views, 0);
-        this.rankingState = 'success';
+  private load(): void {
+    this.state = 'loading';
+    this.svc.getAdminAnalytics().subscribe({
+      next: (data: AdminAnalyticsResponse) => {
+        // Pharmacy ranking
+        this.pharmacyRanking    = data.pharmacy_ranking;
+        this.totalPharmacies    = data.pharmacy_ranking.length;
+        this.totalSystemViews   = data.pharmacy_ranking.reduce((s, r) => s + r.total_views, 0);
+
+        // Area trends
+        this.allAreaTrends  = data.area_drug_trends;
+        this.filteredTrends = data.area_drug_trends;
+        this.governorates   = [...new Set(data.area_drug_trends.map(t => t.governorate))].sort();
+
+        // Top drugs
+        this.topDrugs            = data.top_searched_drugs;
+        this.totalSystemSearches = data.top_searched_drugs.reduce((s, d) => s + d.total_searches, 0);
+        this.topSystemDrug       = data.top_searched_drugs[0]?.name ?? '—';
+
+        // Monthly
+        this.monthlyData       = data.monthly_report;
+        this.monthlyGovOptions = [...new Set(data.monthly_report.map(d => d.governorate))].sort();
+        if (!this.monthlyGov && this.monthlyGovOptions.length) {
+          this.monthlyGov = this.monthlyGovOptions[0];
+        }
+        this.buildMonthlyChart();
+
+        this.state = 'success';
       },
-      error: () => {
-        this.rankingError = 'Could not load pharmacy ranking.';
-        this.rankingState = 'error';
+      error: (err: Error) => {
+        this.errorMessage = err.message;
+        this.state = 'error';
       },
     });
   }
 
-  private loadGovernorates(): void {
-    this.svc.getGovernorates().subscribe({
-      next: (govs) => {
-        this.governorates = govs;
-        this.monthlyGovOptions = govs;
-      },
-    });
-  }
-
-  loadAreaTrends(): void {
-    this.areaTrendsState = 'loading';
-    this.svc
-      .getAreaDrugTrends(
-        this.selectedGovernorate ?? undefined,
-        this.selectedCity ?? undefined,
-      )
-      .subscribe({
-        next: (data) => {
-          this.areaTrends = data;
-          this.areaTrendsState = 'success';
-        },
-        error: () => {
-          this.areaTrendsError = 'Could not load area drug trends.';
-          this.areaTrendsState = 'error';
-        },
-      });
-  }
-
+  // Area filter handlers
   onGovernorateChange(): void {
     this.selectedCity = null;
-    this.cities = [];
-    if (this.selectedGovernorate) {
-      this.svc.getCities(this.selectedGovernorate).subscribe(c => (this.cities = c));
-    }
-    this.loadAreaTrends();
+    this.cities = this.selectedGovernorate
+      ? [...new Set(this.allAreaTrends.filter(t => t.governorate === this.selectedGovernorate).map(t => t.city))].sort()
+      : [];
+    this.applyFilter();
   }
 
-  onCityChange(): void {
-    this.loadAreaTrends();
-  }
+  onCityChange(): void { this.applyFilter(); }
 
   clearAreaFilter(): void {
     this.selectedGovernorate = null;
     this.selectedCity = null;
     this.cities = [];
-    this.loadAreaTrends();
+    this.applyFilter();
   }
 
-  private loadTopDrugs(): void {
-    this.topDrugsState = 'loading';
-    this.svc.getTopSearchedDrugs().subscribe({
-      next: (data) => {
-        this.topDrugs = data;
-        this.totalSystemSearches = data.reduce((s, d) => s + d.total_searches, 0);
-        this.topSystemDrug = data[0]?.name ?? '—';
-        this.topDrugsState = 'success';
-      },
-      error: () => {
-        this.topDrugsError = 'Could not load top drugs.';
-        this.topDrugsState = 'error';
-      },
-    });
+  private applyFilter(): void {
+    let data = this.allAreaTrends;
+    if (this.selectedGovernorate) data = data.filter(t => t.governorate === this.selectedGovernorate);
+    if (this.selectedCity)        data = data.filter(t => t.city === this.selectedCity);
+    this.filteredTrends = data;
   }
 
-  private loadMonthlyVolume(): void {
-    this.monthlyState = 'loading';
-    this.svc.getMonthlySearchVolume().subscribe({
-      next: (data) => {
-        this.monthlyData = data;
-        this.monthlyGovOptions = [...new Set(data.map(d => d.governorate))];
-        if (!this.monthlyGov && this.monthlyGovOptions.length) {
-          this.monthlyGov = this.monthlyGovOptions[0];
-        }
-        this.buildMonthlyChart();
-        this.monthlyState = 'success';
-      },
-      error: () => {
-        this.monthlyError = 'Could not load monthly data.';
-        this.monthlyState = 'error';
-      },
-    });
-  }
-
-  onMonthlyGovChange(): void {
-    this.buildMonthlyChart();
-  }
+  // Monthly chart
+  onMonthlyGovChange(): void { this.buildMonthlyChart(); }
 
   private buildMonthlyChart(): void {
-    const filtered = this.monthlyData.filter(
-      d => !this.monthlyGov || d.governorate === this.monthlyGov
-    );
-    // Aggregate by month (sum across cities in gov)
+    const filtered = this.monthlyData.filter(d => !this.monthlyGov || d.governorate === this.monthlyGov);
     const byMonth: Record<string, number> = {};
     filtered.forEach(d => {
       const key = `${this.MONTH_NAMES[d.month - 1]} ${d.year}`;
@@ -207,11 +152,8 @@ export class AdminDashboardComponent implements OnInit {
     this.monthlyChartData   = Object.values(byMonth);
   }
 
-  get topDrugsChartLabels(): string[] {
-    return this.topDrugs.slice(0, 10).map(d => d.name);
-  }
-
-  get topDrugsChartData(): number[] {
-    return this.topDrugs.slice(0, 10).map(d => d.total_searches);
-  }
+  get topDrugsChartLabels(): string[] { return this.topDrugs.slice(0, 10).map(d => d.name); }
+  get topDrugsChartData(): number[]   { return this.topDrugs.slice(0, 10).map(d => d.total_searches); }
+  get isLoading(): boolean            { return this.state === 'loading'; }
+  get isError(): boolean              { return this.state === 'error'; }
 }

@@ -2,50 +2,46 @@ import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 /**
- * AuthService stub — wire this to your existing auth implementation.
+ * AuthService
  *
- * The dashboard only relies on:
- *   - isAuthenticated(): boolean
- *   - hasRole(role): boolean
- *   - currentUser: { name, role, pharmacyName? }
+ * Wire this to your existing session/JWT implementation.
+ * The dashboard reads three things from it:
+ *   - isAuthenticated()         → guards routes
+ *   - hasRole(role)             → guards pharmacy vs admin routes
+ *   - currentUser.pharmacyName  → used as the ?name= query param for the
+ *                                  pharmacy analytics API endpoint
  *
- * These are intentionally lightweight so the existing auth system
- * can back them without changes to the dashboard components.
+ * Dev usage (browser console):
+ *   localStorage.setItem('dev_role',     'admin')        // switch to admin
+ *   localStorage.setItem('dev_pharmacy', 'El Ezaby Pharmacy') // set pharmacy
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private platformId = inject(PLATFORM_ID);
-  private get isBrowser() { return isPlatformBrowser(this.platformId); }
+  private get isBrowser(): boolean { return isPlatformBrowser(this.platformId); }
 
-  /**
-   * Returns true when a valid session/token is present.
-   * Replace with your token-check / session logic.
-   */
   isAuthenticated(): boolean {
-    // Example: return !!localStorage.getItem('auth_token');
-    return true; // stub — always authenticated for development
+    // Replace with: return !!this.tokenService.getToken();
+    return true;
   }
 
-  /**
-   * Returns true when the authenticated user has the given role.
-   * Replace with JWT claim check or session store lookup.
-   */
   hasRole(role: 'pharmacy' | 'admin'): boolean {
-    // Example: const claims = jwtDecode(token); return claims.role === role;
-    if (!this.isBrowser) return true; // SSR: allow all during prerender
-    const stubRole = localStorage.getItem('dev_role') ?? 'pharmacy';
-    return stubRole === role;
+    if (!this.isBrowser) return true; // SSR: allow prerender
+    const stored = localStorage.getItem('dev_role') ?? 'pharmacy';
+    return stored === role;
   }
 
-  /** Current user info — used for greeting in sidebar/topbar */
   get currentUser(): { name: string; role: string; pharmacyName?: string } {
     if (!this.isBrowser) {
-      return { name: 'Demo User', role: 'pharmacy', pharmacyName: 'El Ezaby Pharmacy' };
+      return { name: 'System', role: 'pharmacy', pharmacyName: '' };
     }
+    const role         = localStorage.getItem('dev_role')     ?? 'pharmacy';
+    const pharmacyName = localStorage.getItem('dev_pharmacy') ?? 'El Ezaby Pharmacy';
     return {
-      name: 'Demo User',
-      role: localStorage.getItem('dev_role') ?? 'pharmacy',
-      pharmacyName: 'El Ezaby Pharmacy',
+      name:         localStorage.getItem('dev_name') ?? 'Demo User',
+      role,
+      // Only expose pharmacyName for pharmacy role; admins don't have one
+      pharmacyName: role === 'pharmacy' ? pharmacyName : undefined,
     };
   }
 }

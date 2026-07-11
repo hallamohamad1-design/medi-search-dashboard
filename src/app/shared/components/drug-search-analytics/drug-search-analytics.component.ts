@@ -6,11 +6,11 @@ import { DrugSearchAnalytics, LoadingState } from '../../../models/analytics.mod
 /**
  * DrugSearchAnalyticsComponent
  *
- * Reusable card/stat-block embedded in a drug detail page.
- * Pass [drugId] and it will load + display analytics automatically.
+ * Reusable card embedded in any drug detail page.
+ * Pass [drugName] (the drug's display name) and it loads analytics automatically.
  *
  * Usage:
- *   <ms-drug-search-analytics [drugId]="drug.id" />
+ *   <ms-drug-search-analytics [drugName]="drug.name" />
  */
 @Component({
   selector: 'ms-drug-search-analytics',
@@ -22,39 +22,39 @@ import { DrugSearchAnalytics, LoadingState } from '../../../models/analytics.mod
 export class DrugSearchAnalyticsComponent implements OnChanges {
   private svc = inject(DashboardService);
 
-  /** ID of the drug to show analytics for */
-  @Input({ required: true }) drugId!: number;
+  /** Name of the drug — passed from the host drug detail page */
+  @Input({ required: true }) drugName!: string;
 
   state: LoadingState = 'idle';
   analytics: DrugSearchAnalytics | null = null;
   error = '';
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['drugId'] && this.drugId) {
+    if (changes['drugName'] && this.drugName) {
       this.load();
     }
   }
 
   private load(): void {
-    this.state = 'loading';
+    this.state     = 'loading';
     this.analytics = null;
-    this.svc.getDrugAnalytics(this.drugId).subscribe({
-      next: (data) => {
+    this.svc.getDrugAnalyticsByName(this.drugName).subscribe({
+      next: data => {
         this.analytics = data;
-        this.state = 'success';
+        this.state     = 'success';
       },
-      error: () => {
-        this.error = 'Could not load drug analytics.';
+      error: (err: Error) => {
+        this.error = err.message;
         this.state = 'error';
       },
     });
   }
 
-  /** Price spread as a percentage of avg — flags high variance */
   get priceSpreadPct(): number {
     if (!this.analytics || this.analytics.avg_price === 0) return 0;
-    const spread = this.analytics.highest_price - this.analytics.lowest_price;
-    return Math.round((spread / this.analytics.avg_price) * 100);
+    return Math.round(
+      ((this.analytics.highest_price - this.analytics.lowest_price) / this.analytics.avg_price) * 100,
+    );
   }
 
   get availabilityClass(): string {
@@ -64,7 +64,5 @@ export class DrugSearchAnalyticsComponent implements OnChanges {
     return 'error';
   }
 
-  retry(): void {
-    this.load();
-  }
+  retry(): void { this.load(); }
 }

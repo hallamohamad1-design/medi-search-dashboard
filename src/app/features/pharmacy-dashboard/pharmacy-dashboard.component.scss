@@ -7,38 +7,38 @@
   gap: $space-6;
 }
 
-// Page header
 .page-header {
   @include flex-between;
   flex-wrap: wrap;
   gap: $space-3;
-
   &__title { font-size: $font-size-2xl; font-weight: $font-weight-bold; }
   &__sub   { font-size: $font-size-sm; color: $color-text-muted; margin-top: $space-1; }
 }
 
-// Stats grid — 4 columns → 2 on tablet → 1 on mobile
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: $space-4;
-
   @include respond-below(xl) { grid-template-columns: repeat(2, 1fr); }
   @include respond-below(sm) { grid-template-columns: 1fr; }
 }
 
-// Cards
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-6;
+  @include respond-below(lg) { grid-template-columns: 1fr; }
+}
+
 .card {
   @include card($space-6);
-
   &__header {
     @include flex-between;
     flex-wrap: wrap;
     gap: $space-3;
     margin-bottom: $space-5;
   }
-
-  &__title { font-size: $font-size-lg; font-weight: $font-weight-semibold; }
-  &__sub   { font-size: $font-size-sm; color: $color-text-muted; margin-top: $space-1; }
+  &__title   { font-size: $font-size-lg; font-weight: $font-weight-semibold; }
+  &__sub     { font-size: $font-size-sm; color: $color-text-muted; margin-top: $space-1; }
   &__actions { display: flex; gap: $space-2; }
 }

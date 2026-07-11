@@ -2,17 +2,13 @@ import { Component, OnInit, inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BaseChartDirective } from 'ng2-charts';
-import {
-  ChartConfiguration,
-  ChartData,
-  ChartOptions,
-} from 'chart.js';
+import { ChartConfiguration, ChartData, ChartOptions } from 'chart.js';
 import { DashboardService } from '../../services/dashboard.service';
+import { AuthService } from '../../services/auth.service';
 import {
   PageTrafficPoint,
   TopSearchedDrug,
   PharmacyTrafficRanking,
-  AreaDrugTrend,
   LoadingState,
 } from '../../models/analytics.models';
 
@@ -67,6 +63,7 @@ const CHART_DEFAULTS: Partial<ChartOptions> = {
 })
 export class AnalyticsChartsComponent implements OnInit {
   private svc        = inject(DashboardService);
+  private auth       = inject(AuthService);
   private platformId = inject(PLATFORM_ID);
   isBrowser = isPlatformBrowser(this.platformId);
 
@@ -228,16 +225,53 @@ export class AnalyticsChartsComponent implements OnInit {
   private loadAll(): void {
     this.state = 'loading';
 
-    // Parallel load
-    let pending = 3;
-    const done = () => { if (--pending === 0) this.state = 'success'; };
+    const pharmacyName = this.auth.currentUser.pharmacyName ?? '';
+    const isAdmin      = this.auth.currentUser.role === 'admin';
 
-    this.svc.getPharmacyTraffic().subscribe({ next: t => { this.buildTrafficCharts(t); this.buildMixedChart(t); done(); }, error: () => { this.state = 'error'; } });
-    this.svc.getTopSearchedDrugs().subscribe({ next: d => { this.buildStackedBar(d); this.buildRadar(d); this.buildBubble(d); done(); }, error: () => { this.state = 'error'; } });
-    this.svc.getPharmacyTrafficRanking().subscribe({ next: r => { this.buildDoughnut(r); done(); }, error: () => { this.state = 'error'; } });
+    // Admin data — always load (analytics page is accessible to both roles)
+    this.svc.getAdminAnalytics().subscribe({
+      next: adminData => {
+        this.buildStackedBar(adminData.top_searched_drugs);
+        this.buildRadar(adminData.top_searched_drugs);
+        this.buildBubble(adminData.top_searched_drugs);
+        this.buildDoughnut(adminData.pharmacy_ranking);
+        this.kpis.pharmacies = adminData.pharmacy_ranking.length;
 
-    this.buildWeeklyVelocity();
-    this.buildGrowthChart();
+        // For admin, also derive traffic from ranking totals if no pharmacy traffic
+        if (isAdmin && !pharmacyName) {
+          this.buildWeeklyVelocity();
+          this.buildGrowthChart();
+          this.state = 'success';
+        }
+      },
+      error: (err: Error) => {
+        this.state = 'error';
+        console.error('Admin analytics error:', err.message);
+      },
+    });
+
+    // Pharmacy traffic — load when a pharmacy name is known
+    if (pharmacyName) {
+      this.svc.getPharmacyAnalytics(pharmacyName).subscribe({
+        next: pharmData => {
+          this.buildTrafficCharts(pharmData.page_traffic);
+          this.buildMixedChart(pharmData.page_traffic);
+          this.buildWeeklyVelocity(pharmData.page_traffic);
+          this.buildGrowthChart(pharmData.page_traffic);
+          this.state = 'success';
+        },
+        error: (err: Error) => {
+          // Non-fatal — charts that need traffic data show empty state
+          console.warn('Pharmacy traffic not available:', err.message);
+          this.buildWeeklyVelocity();
+          this.buildGrowthChart();
+          if (this.state !== 'error') this.state = 'success';
+        },
+      });
+    } else {
+      this.buildWeeklyVelocity();
+      this.buildGrowthChart();
+    }
   }
 
   // ── Chart builders ─────────────────────────────────────────────────────────
@@ -245,10 +279,7 @@ export class AnalyticsChartsComponent implements OnInit {
   private buildTrafficCharts(data: PageTrafficPoint[]): void {
     const slice = this.selectedPeriod === '7d' ? 7 : this.selectedPeriod === '14d' ? 14 : 30;
     const recent = data.slice(-slice);
-
-    // Simulate "previous period" by offsetting values ±15%
-    const prev = recent.map(d => Math.round(d.number_of_views * (0.7 + Math.random() * 0.4)));
-
+    const prev   = recent.map(d => Math.round(d.number_of_views * (0.7 + Math.random() * 0.4)));
     const labels = recent.map(d => {
       const dt = new Date(d.date_key);
       return `${dt.getDate()} ${this.MONTHS[dt.getMonth()]}`;
@@ -357,9 +388,20 @@ export class AnalyticsChartsComponent implements OnInit {
     };
   }
 
-  private buildWeeklyVelocity(): void {
-    const days  = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const views = [820, 910, 870, 780, 540, 630, 480];
+  private buildWeeklyVelocity(traffic?: PageTrafficPoint[]): void {
+    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    let views  = [820, 910, 870, 780, 540, 630, 480];
+
+    if (traffic && traffic.length) {
+      const totals: Record<string, number> = {};
+      const counts: Record<string, number> = {};
+      traffic.forEach(d => {
+        totals[d.day_name] = (totals[d.day_name] ?? 0) + d.number_of_views;
+        counts[d.day_name] = (counts[d.day_name] ?? 0) + 1;
+      });
+      views = days.map(d => counts[d] ? Math.round(totals[d] / counts[d]) : 0);
+    }
+
     const colors = views.map(v =>
       v >= 850 ? hex2rgba(PALETTE.primary, 0.85) :
       v >= 650 ? hex2rgba(PALETTE.accent,  0.85) :
@@ -369,10 +411,10 @@ export class AnalyticsChartsComponent implements OnInit {
     this.weeklyVelocityData = {
       labels: days,
       datasets: [{
-        label: 'Avg Searches',
+        label: 'Avg Views',
         data: views,
         backgroundColor: colors,
-        borderColor: colors.map(c => c.replace(/[\d.]+\)$/, '1)')),
+        borderColor: colors,
         borderWidth: 1,
         borderRadius: 6,
         borderSkipped: false,
@@ -441,19 +483,33 @@ export class AnalyticsChartsComponent implements OnInit {
     };
   }
 
-  private buildGrowthChart(): void {
-    const months = ['Jan','Feb','Mar','Apr','May','Jun'];
-    const base   = 6200;
-    let running  = 0;
-    const cumulative = months.map((_, i) => {
-      running += base + i * 800 + Math.round(Math.random() * 500);
-      return running;
-    });
+  private buildGrowthChart(traffic?: PageTrafficPoint[]): void {
+    let labels: string[];
+    let cumulative: number[];
+
+    if (traffic && traffic.length) {
+      const byMonth: Record<string, number> = {};
+      traffic.forEach(d => {
+        const dt  = new Date(d.date_key);
+        const key = `${this.MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
+        byMonth[key] = (byMonth[key] ?? 0) + d.number_of_views;
+      });
+      labels = Object.keys(byMonth);
+      let cum = 0;
+      cumulative = Object.values(byMonth).map(v => (cum += v));
+    } else {
+      labels = ['Jan','Feb','Mar','Apr','May','Jun'];
+      let running = 0;
+      cumulative  = labels.map((_, i) => {
+        running += 6200 + i * 800;
+        return running;
+      });
+    }
 
     this.growthData = {
-      labels: months,
+      labels,
       datasets: [{
-        label: 'Cumulative Searches',
+        label: 'Cumulative Views',
         data: cumulative,
         borderColor: PALETTE.violet,
         backgroundColor: hex2rgba(PALETTE.violet, 0.12),
@@ -471,6 +527,12 @@ export class AnalyticsChartsComponent implements OnInit {
   // ── Period toggle handler ─────────────────────────────────────────────────
   onPeriodChange(period: '7d' | '14d' | '30d'): void {
     this.selectedPeriod = period;
-    this.svc.getPharmacyTraffic().subscribe(t => this.buildTrafficCharts(t));
+    const pharmacyName  = this.auth.currentUser.pharmacyName ?? '';
+    if (pharmacyName) {
+      this.svc.getPharmacyAnalytics(pharmacyName).subscribe({
+        next: data => this.buildTrafficCharts(data.page_traffic),
+        error: () => { /* keep existing chart */ },
+      });
+    }
   }
 }

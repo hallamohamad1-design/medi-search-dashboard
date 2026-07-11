@@ -1,33 +1,47 @@
 <div class="demo-page fade-in">
   <header class="demo-header">
     <a routerLink="/" class="btn btn--ghost btn--sm">← Back</a>
-    <h1 class="demo-header__title">Drug Detail — Analytics Widget Demo</h1>
+    <h1 class="demo-header__title">Drug Analytics Widget</h1>
     <p class="demo-header__sub">
-      The <code>&lt;ms-drug-search-analytics&gt;</code> component below can be dropped
-      into any drug detail page in the existing app. Pass <code>[drugId]</code> and it handles the rest.
+      Live data from <code>/api/analytics/drug-search?name=...</code>.
+      Drop <code>&lt;ms-drug-search-analytics [drugName]="drug.name" /&gt;</code> into any drug detail page.
     </p>
   </header>
 
-  <!-- Drug picker (demo only) -->
+  <!-- Preset drug selector -->
   <div class="demo-picker">
-    <span class="demo-picker__label">Try another drug:</span>
-    @for (drug of demoOptions; track drug.id) {
+    <span class="demo-picker__label">Quick select:</span>
+    @for (name of demoOptions; track name) {
       <button
         class="btn btn--sm"
-        [class.btn--primary]="selectedDrugId === drug.id"
-        [class.btn--secondary]="selectedDrugId !== drug.id"
-        (click)="selectedDrugId = drug.id">
-        {{ drug.name }}
+        [class.btn--primary]="selectedDrugName === name && !customDrugName"
+        [class.btn--secondary]="selectedDrugName !== name || !!customDrugName"
+        (click)="selectedDrugName = name; customDrugName = ''">
+        {{ name }}
       </button>
     }
   </div>
 
-  <!-- ── The reusable widget ── -->
-  <ms-drug-search-analytics [drugId]="selectedDrugId" />
+  <!-- Custom drug name search -->
+  <div class="demo-search">
+    <input
+      class="demo-search__input"
+      type="text"
+      placeholder="Or type any drug name from the database…"
+      [(ngModel)]="customDrugName"
+      (keyup.enter)="search()"
+      aria-label="Custom drug name" />
+    <button class="btn btn--primary" (click)="search()" [disabled]="!customDrugName.trim()">
+      Search
+    </button>
+  </div>
+
+  <!-- The reusable widget — live API call -->
+  <ms-drug-search-analytics [drugName]="activeDrug" />
 
   <!-- Usage snippet -->
   <details class="usage-snippet">
-    <summary>How to embed this widget</summary>
+    <summary>How to embed this widget in the main app</summary>
     <pre><code>
 // 1. Import in your standalone component:
 import &#123; DrugSearchAnalyticsComponent &#125; from
@@ -36,8 +50,8 @@ import &#123; DrugSearchAnalyticsComponent &#125; from
 // 2. Add to imports array:
 imports: [DrugSearchAnalyticsComponent]
 
-// 3. Drop into your template:
-&lt;ms-drug-search-analytics [drugId]="drug.id" /&gt;
+// 3. Drop into your template — pass the drug name exactly as stored in dim_drug:
+&lt;ms-drug-search-analytics [drugName]="drug.name" /&gt;
     </code></pre>
   </details>
 </div>
