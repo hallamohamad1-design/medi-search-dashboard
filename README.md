@@ -1,27 +1,110 @@
-# MediSearchDashboard
+# MediSearch Analytics Dashboard
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.17.
+> Angular 17 frontend for the MediSearch drug-tracking platform.  
+> Design derived from [medi-search-eight.vercel.app](https://medi-search-eight.vercel.app/)
 
-## Development server
+---
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+## Features
 
-## Code scaffolding
+### Pharmacy Dashboard `/dashboard/pharmacy`
+- Page traffic area chart — daily views over 30 days
+- Drug search trends — most-searched drugs in your area (chart ↔ table toggle)
+- Stat cards: total views, avg daily views, peak day, top drug
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+### Admin Dashboard `/dashboard/admin`
+- System-wide KPI cards
+- Pharmacy traffic ranking — sortable table with rank badges
+- Area drug trends — governorate → city cascade filter
+- Top searched drugs — horizontal bar chart
+- Monthly period-over-period volume (stretch goal)
 
-## Build
+### Analytics Charts `/dashboard/analytics`
+Eight chart types built with Chart.js / ng2-charts:
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+| Chart | Purpose |
+|---|---|
+| Multi-series line | Period-over-period traffic comparison |
+| Mixed bar + line | Daily views bars with cumulative overlay |
+| Doughnut | Pharmacy market share by views |
+| Stacked bar | Drug searches split by governorate |
+| Radar | Search intensity across 5 governorates |
+| Horizontal bar | Weekly search velocity by day of week |
+| Area | Cumulative search growth |
+| Bubble | Drug demand vs supply (searches × pharmacies × price) |
 
-## Running unit tests
+### Drug Analytics Widget
+Reusable `<ms-drug-search-analytics [drugId]="id" />` card — avg/min/max price, in-stock count, availability bar. Embed anywhere in the app.
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+---
 
-## Running end-to-end tests
+## Architecture
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+```
+src/
+├── styles/
+│   ├── design-tokens.scss   ← full brand token set
+│   └── mixins.scss
+├── app/
+│   ├── models/              ← analytics.models.ts (all API shapes)
+│   ├── services/
+│   │   ├── dashboard.service.ts   ← all HTTP calls + stubs
+│   │   └── auth.service.ts        ← wire to your auth system
+│   ├── guards/
+│   │   └── role.guard.ts          ← roleGuard('pharmacy'|'admin')
+│   ├── layout/
+│   │   └── dashboard-layout/      ← sidebar + topbar shell
+│   ├── shared/components/
+│   │   ├── stat-card/
+│   │   ├── trend-chart/
+│   │   ├── ranked-table/
+│   │   └── drug-search-analytics/
+│   └── features/
+│       ├── pharmacy-dashboard/
+│       ├── admin-dashboard/
+│       ├── analytics-charts/
+│       ├── drug-detail-demo/
+│       └── unauthorized/
+```
 
-## Further help
+---
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+## Getting Started
+
+```bash
+npm install
+ng serve
+```
+
+Open [http://localhost:4200](http://localhost:4200)
+
+**Switch to admin role during dev:**
+```js
+localStorage.setItem('dev_role', 'admin')
+// then navigate to /dashboard/admin or /dashboard/analytics
+```
+
+---
+
+## Wiring the Real API
+
+1. Open `src/app/services/dashboard.service.ts`
+2. Replace `const API_BASE = '/api'` with your actual base URL
+3. Uncomment the `this.http.get(...)` lines and delete the `of(STUB_...)` lines beneath them
+
+---
+
+## Tech Stack
+
+- Angular 17 (standalone components, signals, new control flow)
+- Chart.js 4 + ng2-charts 6
+- SCSS with design tokens
+- SSR-ready (Angular Universal)
+- Lazy-loaded routes
+
+---
+
+## Known Data Flags
+
+- **Date gaps in traffic data** — the API doesn't zero-fill days with no views. If gaps exist, the line chart will skip those dates. Zero-fill server-side or in the service layer.
+- **Area trends** — `governorate` and `city` are plain strings; ensure consistent casing from the API to avoid filter mismatches.
