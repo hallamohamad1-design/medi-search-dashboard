@@ -1,110 +1,131 @@
 # MediSearch Analytics Dashboard
 
-> Angular 17 frontend for the MediSearch drug-tracking platform.  
-> Design derived from [medi-search-eight.vercel.app](https://medi-search-eight.vercel.app/)
+> Angular 17 frontend + Flask backend for the MediSearch drug-tracking platform.  
+> Database: Neon (serverless Postgres) · Deployed on Vercel
 
 ---
 
-## Features
+## Live URLs (after deployment)
 
-### Pharmacy Dashboard `/dashboard/pharmacy`
-- Page traffic area chart — daily views over 30 days
-- Drug search trends — most-searched drugs in your area (chart ↔ table toggle)
-- Stat cards: total views, avg daily views, peak day, top drug
-
-### Admin Dashboard `/dashboard/admin`
-- System-wide KPI cards
-- Pharmacy traffic ranking — sortable table with rank badges
-- Area drug trends — governorate → city cascade filter
-- Top searched drugs — horizontal bar chart
-- Monthly period-over-period volume (stretch goal)
-
-### Analytics Charts `/dashboard/analytics`
-Eight chart types built with Chart.js / ng2-charts:
-
-| Chart | Purpose |
+| Service | URL |
 |---|---|
-| Multi-series line | Period-over-period traffic comparison |
-| Mixed bar + line | Daily views bars with cumulative overlay |
-| Doughnut | Pharmacy market share by views |
-| Stacked bar | Drug searches split by governorate |
-| Radar | Search intensity across 5 governorates |
-| Horizontal bar | Weekly search velocity by day of week |
-| Area | Cumulative search growth |
-| Bubble | Drug demand vs supply (searches × pharmacies × price) |
-
-### Drug Analytics Widget
-Reusable `<ms-drug-search-analytics [drugId]="id" />` card — avg/min/max price, in-stock count, availability bar. Embed anywhere in the app.
+| **Frontend** | `https://medi-search-dashboard.vercel.app` |
+| **Backend API** | `https://medi-search-api.vercel.app` |
 
 ---
 
-## Architecture
+## Local Development
 
-```
-src/
-├── styles/
-│   ├── design-tokens.scss   ← full brand token set
-│   └── mixins.scss
-├── app/
-│   ├── models/              ← analytics.models.ts (all API shapes)
-│   ├── services/
-│   │   ├── dashboard.service.ts   ← all HTTP calls + stubs
-│   │   └── auth.service.ts        ← wire to your auth system
-│   ├── guards/
-│   │   └── role.guard.ts          ← roleGuard('pharmacy'|'admin')
-│   ├── layout/
-│   │   └── dashboard-layout/      ← sidebar + topbar shell
-│   ├── shared/components/
-│   │   ├── stat-card/
-│   │   ├── trend-chart/
-│   │   ├── ranked-table/
-│   │   └── drug-search-analytics/
-│   └── features/
-│       ├── pharmacy-dashboard/
-│       ├── admin-dashboard/
-│       ├── analytics-charts/
-│       ├── drug-detail-demo/
-│       └── unauthorized/
-```
-
----
-
-## Getting Started
+### 1 — Backend (Flask)
 
 ```bash
-npm install
-ng serve
+cd BACK
+pip install -r requirements.txt
+cd app
+python app.py          # runs on http://localhost:5000
 ```
 
-Open [http://localhost:4200](http://localhost:4200)
+### 2 — Frontend (Angular)
 
-**Switch to admin role during dev:**
+```bash
+npm install --legacy-peer-deps
+npm start              # ng serve + proxy → http://localhost:4200
+```
+
+The Angular dev-server proxy (`proxy.conf.json`) forwards all `/api/*` requests to `localhost:5000` automatically.
+
+### Dev role switching (browser console)
+
 ```js
+// Pharmacy view
+localStorage.setItem('dev_role',     'pharmacy')
+localStorage.setItem('dev_pharmacy', 'El Ezaby Pharmacy')  // must match dim_pharmacy.name
+
+// Admin view
 localStorage.setItem('dev_role', 'admin')
-// then navigate to /dashboard/admin or /dashboard/analytics
 ```
 
 ---
 
-## Wiring the Real API
+## Vercel Deployment
 
-1. Open `src/app/services/dashboard.service.ts`
-2. Replace `const API_BASE = '/api'` with your actual base URL
-3. Uncomment the `this.http.get(...)` lines and delete the `of(STUB_...)` lines beneath them
+### Deploy the Backend first
+
+1. Go to [vercel.com/new](https://vercel.com/new)
+2. Import this repo — **set Root Directory to `BACK`**
+3. Framework Preset: **Other**
+4. Add Environment Variables (Settings → Environment Variables):
+
+| Variable | Value |
+|---|---|
+| `DB_HOST` | `ep-wandering-hill-at0u1gzo-pooler.c-9.us-east-1.aws.neon.tech` |
+| `DB_NAME` | `neondb` |
+| `DB_USER` | `neondb_owner` |
+| `DB_PASSWORD` | *(your Neon password)* |
+| `DB_PORT` | `5432` |
+| `DB_SSLMODE` | `require` |
+| `FRONTEND_URL` | *(your Angular Vercel URL — add after frontend deploy)* |
+
+5. Deploy → note the URL, e.g. `https://medi-search-api.vercel.app`
+
+### Deploy the Frontend
+
+1. Go to [vercel.com/new](https://vercel.com/new) again
+2. Import the same repo — **Root Directory: leave empty (project root)**
+3. Framework Preset: **Other**
+4. Build Command: `npm run build:prod`
+5. Output Directory: `dist/medi-search-dashboard/browser`
+6. Add Environment Variable:
+   - `NODE_OPTIONS` = `--max-old-space-size=4096`
+7. **Before deploying**: update `src/environments/environment.prod.ts` — set `apiUrl` to your backend URL from step above
+8. Push the change → Vercel auto-deploys
+
+### Update CORS after both are deployed
+
+Go to the **backend** Vercel project → Settings → Environment Variables  
+Update `FRONTEND_URL` to your Angular Vercel URL → Redeploy backend.
 
 ---
 
-## Tech Stack
+## API Endpoints
 
-- Angular 17 (standalone components, signals, new control flow)
-- Chart.js 4 + ng2-charts 6
-- SCSS with design tokens
-- SSR-ready (Angular Universal)
-- Lazy-loaded routes
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/analytics/pharmacy/analytics?name=<name>` | Pharmacy traffic + drug trends |
+| GET | `/api/analytics/pharmacy/low-stock` | Low stock alerts + stocking opportunities |
+| GET | `/api/analytics/admin` | All admin data (ranking, trends, monthly) |
+| GET | `/api/analytics/drug-search?name=<name>` | Drug price + availability stats |
 
 ---
 
-## Known Data Flags
+## Project Structure
 
-- **Date gaps in traffic data** — the API doesn't zero-fill days with no views. If gaps exist, the line chart will skip those dates. Zero-fill server-side or in the service layer.
-- **Area trends** — `governorate` and `city` are plain strings; ensure consistent casing from the API to avoid filter mismatches.
+```
+medi-search-dashboard/
+├── BACK/                          ← Flask backend
+│   ├── api/index.py               ← Vercel serverless entry point
+│   ├── app/
+│   │   ├── app.py                 ← Flask app + CORS
+│   │   ├── database.py            ← Neon Postgres connection
+│   │   ├── routes/                ← admin.py, pharmacy.py, search.py
+│   │   ├── services/              ← business logic
+│   │   └── queries/               ← SQL queries
+│   ├── requirements.txt
+│   └── vercel.json                ← Backend Vercel config
+├── src/
+│   ├── environments/
+│   │   ├── environment.ts         ← dev (proxy to localhost:5000)
+│   │   └── environment.prod.ts    ← prod (points to Vercel backend URL)
+│   └── app/
+│       ├── services/
+│       │   └── dashboard.service.ts  ← all API calls
+│       ├── features/
+│       │   ├── pharmacy-dashboard/
+│       │   ├── admin-dashboard/
+│       │   ├── analytics-charts/
+│       │   └── drug-detail-demo/
+│       └── shared/components/
+├── proxy.conf.json                ← dev proxy: /api/* → :5000
+├── vercel.json                    ← Frontend Vercel config
+└── angular.json
+```

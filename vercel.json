@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build:prod",
+  "outputDirectory": "dist/medi-search-dashboard/browser",
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": null,
+  "routes": [
+    {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
+      "src": "/(.*\\.js|.*\\.css|.*\\.ico|.*\\.png|.*\\.svg|.*\\.woff2?|.*\\.ttf)",
+      "dest": "/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}

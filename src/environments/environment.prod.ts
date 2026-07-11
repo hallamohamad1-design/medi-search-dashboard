@@ -1,4 +1,8 @@
 export const environment = {
   production: true,
-  apiUrl: '',   // Set your production Flask URL here e.g. https://api.medi-search.com
+  // ── Set this to your deployed Flask backend URL after first Vercel deploy ──
+  // Example: 'https://medi-search-api.vercel.app'
+  // Leave empty if frontend and backend are deployed under the same Vercel project
+  // (uncommon — usually they are separate projects).
+  apiUrl: 'https://medi-search-api.vercel.app',
 };
