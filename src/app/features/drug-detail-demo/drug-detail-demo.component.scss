@@ -1,0 +1,70 @@
+@use '../../../styles/design-tokens' as *;
+@use '../../../styles/mixins' as *;
+
+.demo-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: $space-8 $space-6;
+  display: flex;
+  flex-direction: column;
+  gap: $space-6;
+
+  @include respond-below(md) { padding: $space-4; }
+}
+
+.demo-header {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+
+  &__title { font-size: $font-size-2xl; font-weight: $font-weight-bold; }
+  &__sub   { color: $color-text-secondary; font-size: $font-size-sm; line-height: $line-height-relaxed; }
+
+  code {
+    background: $color-neutral-100;
+    padding: 1px 6px;
+    border-radius: $radius-sm;
+    font-family: $font-family-mono;
+    font-size: 0.85em;
+    color: $color-primary-700;
+  }
+}
+
+.demo-picker {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  flex-wrap: wrap;
+
+  &__label { font-size: $font-size-sm; color: $color-text-muted; }
+}
+
+// Usage snippet
+.usage-snippet {
+  @include card($space-4);
+
+  summary {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+    cursor: pointer;
+    user-select: none;
+    &:hover { color: $color-text-primary; }
+  }
+
+  pre {
+    margin-top: $space-4;
+    background: $color-neutral-800;
+    border-radius: $radius-md;
+    padding: $space-4;
+    overflow-x: auto;
+    @include custom-scrollbar;
+  }
+
+  code {
+    font-family: $font-family-mono;
+    font-size: $font-size-xs;
+    color: $color-accent-300;
+    line-height: $line-height-relaxed;
+  }
+}

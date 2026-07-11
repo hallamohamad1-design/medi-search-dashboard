@@ -1,0 +1,43 @@
+<div class="demo-page fade-in">
+  <header class="demo-header">
+    <a routerLink="/" class="btn btn--ghost btn--sm">← Back</a>
+    <h1 class="demo-header__title">Drug Detail — Analytics Widget Demo</h1>
+    <p class="demo-header__sub">
+      The <code>&lt;ms-drug-search-analytics&gt;</code> component below can be dropped
+      into any drug detail page in the existing app. Pass <code>[drugId]</code> and it handles the rest.
+    </p>
+  </header>
+
+  <!-- Drug picker (demo only) -->
+  <div class="demo-picker">
+    <span class="demo-picker__label">Try another drug:</span>
+    @for (drug of demoOptions; track drug.id) {
+      <button
+        class="btn btn--sm"
+        [class.btn--primary]="selectedDrugId === drug.id"
+        [class.btn--secondary]="selectedDrugId !== drug.id"
+        (click)="selectedDrugId = drug.id">
+        {{ drug.name }}
+      </button>
+    }
+  </div>
+
+  <!-- ── The reusable widget ── -->
+  <ms-drug-search-analytics [drugId]="selectedDrugId" />
+
+  <!-- Usage snippet -->
+  <details class="usage-snippet">
+    <summary>How to embed this widget</summary>
+    <pre><code>
+// 1. Import in your standalone component:
+import &#123; DrugSearchAnalyticsComponent &#125; from
+  './shared/components/drug-search-analytics/drug-search-analytics.component';
+
+// 2. Add to imports array:
+imports: [DrugSearchAnalyticsComponent]
+
+// 3. Drop into your template:
+&lt;ms-drug-search-analytics [drugId]="drug.id" /&gt;
+    </code></pre>
+  </details>
+</div>

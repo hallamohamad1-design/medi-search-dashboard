@@ -1,0 +1,91 @@
+@use '../../../styles/design-tokens' as *;
+@use '../../../styles/mixins' as *;
+
+.admin-dash {
+  display: flex;
+  flex-direction: column;
+  gap: $space-6;
+}
+
+.page-header {
+  @include flex-between;
+  flex-wrap: wrap;
+  gap: $space-3;
+
+  &__title { font-size: $font-size-2xl; font-weight: $font-weight-bold; }
+  &__sub   { font-size: $font-size-sm; color: $color-text-muted; margin-top: $space-1; }
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $space-4;
+
+  @include respond-below(xl) { grid-template-columns: repeat(2, 1fr); }
+  @include respond-below(sm) { grid-template-columns: 1fr; }
+}
+
+// Two-column row
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-6;
+
+  @include respond-below(lg) { grid-template-columns: 1fr; }
+}
+
+// Card
+.card {
+  @include card($space-6);
+
+  &__header {
+    @include flex-between;
+    flex-wrap: wrap;
+    gap: $space-3;
+    margin-bottom: $space-5;
+    align-items: flex-start;
+  }
+
+  &__title   { font-size: $font-size-lg; font-weight: $font-weight-semibold; }
+  &__sub     { font-size: $font-size-sm; color: $color-text-muted; margin-top: $space-1; }
+  &__actions { display: flex; gap: $space-2; }
+
+  &__filters {
+    display: flex;
+    align-items: flex-end;
+    gap: $space-3;
+    flex-wrap: wrap;
+  }
+}
+
+// Filter controls
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.filter-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.filter-select {
+  padding: $space-2 $space-8 $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236e808c' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 10px center;
+  appearance: none;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-family: $font-family-base;
+  cursor: pointer;
+  transition: $transition-fast;
+  min-width: 160px;
+
+  &:hover   { border-color: $color-primary-400; }
+  &:focus   { outline: none; border-color: $color-primary-500; box-shadow: $shadow-focus; }
+}

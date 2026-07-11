@@ -1,0 +1,42 @@
+<div class="trend-chart" [style.height.px]="height">
+
+  <!-- Loading skeleton -->
+  @if (loading) {
+    <div class="trend-chart__skeleton" aria-busy="true" aria-label="Loading chart">
+      <div class="skel-bars">
+        @for (i of [1,2,3,4,5,6,7,8]; track i) {
+          <div class="skel-bar" [style.height.%]="20 + (i * 9) % 60"></div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Error state -->
+  @if (!loading && error) {
+    <div class="trend-chart__error" role="alert">
+      <span class="trend-chart__error-icon" aria-hidden="true">⚠️</span>
+      <p>{{ errorMessage }}</p>
+    </div>
+  }
+
+  <!-- Empty state -->
+  @if (isEmpty) {
+    <div class="trend-chart__empty" role="status">
+      <span class="trend-chart__empty-icon" aria-hidden="true">📊</span>
+      <p>No data available yet.</p>
+    </div>
+  }
+
+  <!-- Chart -->
+  @if (!loading && !error && !isEmpty && isBrowser) {
+    <canvas
+      baseChart
+      [type]="resolvedChartType"
+      [data]="chartData"
+      [options]="chartOptions"
+      role="img"
+      [attr.aria-label]="datasetLabel + ' chart'">
+    </canvas>
+  }
+
+</div>

@@ -1,0 +1,109 @@
+<div class="layout" [class.layout--collapsed]="sidebarCollapsed()">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" role="navigation" aria-label="Dashboard navigation">
+    <!-- Brand -->
+    <div class="sidebar__brand">
+      <a href="/" class="sidebar__logo" aria-label="MediSearch home">
+        <span class="sidebar__logo-icon" aria-hidden="true">💊</span>
+        @if (!sidebarCollapsed()) {
+          <span class="sidebar__logo-text">MediSearch</span>
+        }
+      </a>
+      <button
+        class="sidebar__toggle btn btn--ghost btn--sm"
+        (click)="toggleSidebar()"
+        [attr.aria-expanded]="!sidebarCollapsed()"
+        aria-label="Toggle sidebar">
+        {{ sidebarCollapsed() ? '→' : '←' }}
+      </button>
+    </div>
+
+    <!-- User info -->
+    @if (!sidebarCollapsed()) {
+      <div class="sidebar__user">
+        <div class="sidebar__user-avatar" aria-hidden="true">
+          {{ auth.currentUser.name.charAt(0).toUpperCase() }}
+        </div>
+        <div class="sidebar__user-info">
+          <p class="sidebar__user-name">{{ auth.currentUser.name }}</p>
+          <p class="sidebar__user-role">
+            <span class="badge badge--primary">{{ auth.currentUser.role | titlecase }}</span>
+          </p>
+          @if (auth.currentUser.pharmacyName) {
+            <p class="sidebar__user-pharmacy">{{ auth.currentUser.pharmacyName }}</p>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Nav -->
+    <nav class="sidebar__nav">
+      <ul role="list">
+        @for (item of visibleNavItems; track item.route) {
+          <li>
+            <a
+              class="sidebar__nav-item"
+              [routerLink]="item.route"
+              routerLinkActive="sidebar__nav-item--active"
+              [attr.aria-label]="sidebarCollapsed() ? item.label : null"
+              [title]="sidebarCollapsed() ? item.label : ''">
+              <span class="sidebar__nav-icon" aria-hidden="true">{{ item.icon }}</span>
+              @if (!sidebarCollapsed()) {
+                <span class="sidebar__nav-label">{{ item.label }}</span>
+              }
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <!-- Footer -->
+    <div class="sidebar__footer">
+      <a href="/" class="sidebar__footer-link">
+        <span aria-hidden="true">🏠</span>
+        @if (!sidebarCollapsed()) { <span>Back to Site</span> }
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main area -->
+  <div class="main">
+    <!-- Top bar -->
+    <header class="topbar" role="banner">
+      <div class="topbar__left">
+        <button
+          class="topbar__menu-btn btn btn--ghost btn--sm"
+          (click)="toggleSidebar()"
+          aria-label="Toggle menu">
+          ☰
+        </button>
+        <div class="topbar__breadcrumb" aria-label="breadcrumb">
+          <span>Dashboard</span>
+          <span class="topbar__breadcrumb-sep" aria-hidden="true">/</span>
+          <span class="topbar__breadcrumb-active">
+            {{ auth.currentUser.role === 'admin' ? 'Admin' : 'Pharmacy' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="topbar__right">
+        <span class="topbar__refresh-note" title="Data refreshes daily at midnight">
+          🔄 Daily refresh
+        </span>
+        <div class="topbar__user-chip">
+          <span class="topbar__user-avatar" aria-hidden="true">
+            {{ auth.currentUser.name.charAt(0).toUpperCase() }}
+          </span>
+          <span class="topbar__user-name">{{ auth.currentUser.name }}</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <main class="content" id="main-content" tabindex="-1">
+      <router-outlet />
+    </main>
+  </div>
+
+</div>

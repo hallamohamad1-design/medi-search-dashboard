@@ -1,0 +1,63 @@
+@use '../../../../styles/design-tokens' as *;
+@use '../../../../styles/mixins' as *;
+
+.ranked-table-wrap { width: 100%; }
+
+.ranked-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  @include custom-scrollbar;
+
+  &--loading { pointer-events: none; }
+}
+
+.col-rank {
+  width: 48px;
+  text-align: center;
+}
+
+// Sortable header
+.sortable { cursor: pointer; user-select: none; }
+.sorted   { color: $color-primary-600 !important; }
+
+.sort-icon {
+  display: inline-block;
+  margin-left: $space-1;
+  font-size: $font-size-xs;
+  opacity: 0.6;
+  vertical-align: middle;
+}
+
+// Rank badge (1–3 highlighted)
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  background: $color-neutral-100;
+  color: $color-text-secondary;
+
+  &--top {
+    background: linear-gradient(135deg, $color-primary-500, $color-accent-500);
+    color: $color-text-inverse;
+  }
+}
+
+// Skeleton cells
+.skeleton-row td { padding: $space-3 $space-4; }
+
+.skel {
+  @include skeleton;
+  height: 14px;
+  width: 100%;
+  max-width: 180px;
+
+  &--sm { max-width: 70px; }
+}
+
+// Empty
+.empty-cell { border-bottom: none !important; }
