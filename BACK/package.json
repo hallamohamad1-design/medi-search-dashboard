@@ -1,0 +1,8 @@
+{
+  "name": "medi-search-api",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'Python project - no build step'",
+    "start": "python app/app.py"
+  }
+}

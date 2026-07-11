@@ -4,6 +4,7 @@
   "outputDirectory": "dist/medi-search-dashboard/browser",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": null,
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude)BACK'",
   "routes": [
     {
       "src": "/assets/(.*)",
