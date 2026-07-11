@@ -1,5 +1,6 @@
 import os
-from flask import Flask
+import re
+from flask import Flask, request
 from flask_cors import CORS
 
 from routes.pharmacy import pharmacy
@@ -9,19 +10,43 @@ from routes.admin import admin
 app = Flask(__name__)
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-# Allow the Angular frontend origins.
-# In production the FRONTEND_URL env var should be set on Vercel to the
-# deployed Angular URL, e.g. https://medi-search-dashboard.vercel.app
-allowed_origins = [
-    "http://localhost:4200",
-    "http://127.0.0.1:4200",
-]
+# Allow localhost for development + ALL *.vercel.app domains for production.
+# This covers the main domain AND every preview deployment URL automatically.
 
-frontend_url = os.environ.get("FRONTEND_URL", "")
-if frontend_url:
-    allowed_origins.append(frontend_url)
+def is_allowed_origin(origin):
+    if not origin:
+        return False
+    allowed = [
+        r"^http://localhost(:\d+)?$",
+        r"^http://127\.0\.0\.1(:\d+)?$",
+        r"^https://medi-search-dashboard\.vercel\.app$",
+        r"^https://medi-search-da.*\.vercel\.app$",
+        r"^https://medi-search-dashboard.*\.vercel\.app$",
+    ]
+    return any(re.match(p, origin) for p in allowed)
 
-CORS(app, origins=allowed_origins, supports_credentials=True)
+@app.after_request
+def add_cors(response):
+    origin = request.headers.get("Origin", "")
+    if is_allowed_origin(origin):
+        response.headers["Access-Control-Allow-Origin"]  = origin
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization,Accept"
+        response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        from flask import make_response
+        origin = request.headers.get("Origin", "")
+        res = make_response()
+        if is_allowed_origin(origin):
+            res.headers["Access-Control-Allow-Origin"]  = origin
+            res.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization,Accept"
+            res.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+            res.headers["Access-Control-Max-Age"]       = "86400"
+        return res, 204
 
 # ── Blueprints ────────────────────────────────────────────────────────────────
 app.register_blueprint(analytics)
