@@ -1,6 +1,6 @@
 <div class="login-page">
 
-  <!-- Left panel -->
+  <!-- Left panel — branding -->
   <div class="login-page__brand">
     <div class="brand-content">
       <div class="brand-logo">
@@ -8,10 +8,10 @@
         <span class="brand-logo__text">MediSearch</span>
       </div>
       <h1 class="brand-title">Analytics Dashboard</h1>
-      <p class="brand-sub">
+      <div class="brand-sub">
         Real-time insights from Egypt's pharmaceutical search platform.
         Track traffic, drug trends, and availability across all governorates.
-      </p>
+      </div>
       <div class="brand-stats">
         <div class="brand-stat">
           <span class="brand-stat__value">4</span>
@@ -27,12 +27,12 @@
         </div>
       </div>
 
-      <!-- Credentials hint -->
+      <!-- Default credentials hint -->
       <div class="brand-hint">
-        <p class="brand-hint__title">Default credentials</p>
-        <p class="brand-hint__row"><span class="bold">Admin:</span> admin / Admin@2024!</p>
-        <p class="brand-hint__row"><span class="bold">Pharmacy:</span> el_ezaby_pharmacy / Pharmacy@1</p>
-        <p class="brand-hint__note">Run <code>POST /api/auth/setup</code> first if this is a fresh deployment.</p>
+        <div class="brand-hint__title">Default credentials</div>
+        <div class="brand-hint__row">Admin: admin / Admin&#64;2024!</div>
+        <div class="brand-hint__row">Pharmacy: el_ezaby_pharmacy / Pharmacy&#64;1</div>
+        <div class="brand-hint__note">Run POST /api/auth/setup on first deployment.</div>
       </div>
     </div>
   </div>
@@ -44,7 +44,7 @@
       <div class="login-card__header">
         <div class="login-card__logo" aria-hidden="true">💊</div>
         <h2 class="login-card__title">Sign in</h2>
-        <p class="login-card__sub">Enter your dashboard credentials</p>
+        <div class="login-card__sub">Enter your dashboard credentials</div>
       </div>
 
       @if (error) {
@@ -65,8 +65,7 @@
             name="username"
             placeholder="e.g. el_ezaby_pharmacy"
             autocomplete="username"
-            required
-            [disabled]="loading" />
+            required />
         </div>
 
         <div class="form-group">
@@ -80,8 +79,7 @@
               name="password"
               placeholder="Enter password"
               autocomplete="current-password"
-              required
-              [disabled]="loading" />
+              required />
             <button
               type="button"
               class="form-input-eye"
@@ -100,17 +98,17 @@
             <span class="login-btn__spinner" aria-hidden="true">⏳</span>
             Signing in…
           } @else {
-            <span>Sign in →</span>
+            Sign in →
           }
         </button>
 
       </form>
 
-      <p class="login-card__note">
+      <div class="login-card__note">
         <a href="https://medi-search-eight.vercel.app" target="_blank" rel="noopener">
           ← Back to MediSearch
         </a>
-      </p>
+      </div>
 
     </div>
   </div>
