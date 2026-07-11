@@ -23,6 +23,10 @@ WHERE fpv.pharmacy_id = %s
 ORDER BY dt.date_key;
 """
 
+# ── Drug trends: top searched drugs SYSTEM-WIDE (last 30 days) ────────────────
+# The original query joined dim_pharmacy city/governorate to dim_location but
+# the pharmacy cities don't match the location cities in fact_drug_trends.
+# Instead we return system-wide top-searched drugs so the chart always has data.
 GET_PHARMACY_DRUG_TRENDS = """
 SELECT
     dd.drug_id,
@@ -34,16 +38,7 @@ FROM fact_drug_trends fdt
 JOIN dim_drug dd
     ON fdt.drug_id = dd.drug_id
 
-JOIN dim_location dl
-    ON fdt.location_id = dl.location_id
-
-JOIN dim_pharmacy dp
-    ON dp.city = dl.city
-    AND dp.governorate = dl.governorate
-
-WHERE
-    dp.pharmacy_id = %s
-    AND fdt.date_key >= CURRENT_DATE - INTERVAL '30 days'
+WHERE fdt.date_key >= CURRENT_DATE - INTERVAL '30 days'
 
 GROUP BY
     dd.drug_id,
