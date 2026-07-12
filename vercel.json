@@ -1,14 +1,21 @@
 {
-  "buildCommand": "npm run build:prod",
-  "outputDirectory": "dist/medi-search-dashboard/browser",
-  "installCommand": "npm install --legacy-peer-deps",
-  "functions": {
-    "api/index.py": {
-      "includeFiles": "BACK/app/**"
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "15mb" }
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist/medi-search-dashboard/browser"
+      }
     }
-  },
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/index.py" },
-    { "source": "/:path*", "destination": "/index.html" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index.py" },
+    { "src": "/(.*)", "dest": "/$1" }
   ]
 }
