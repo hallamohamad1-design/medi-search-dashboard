@@ -51,7 +51,7 @@
     </div>
 
     <!-- Autocomplete dropdown -->
-    @if (showDropdown && suggestions.length) {
+    @if (showDropdown) {
       <ul class="demo-suggestions" role="listbox" aria-label="Drug suggestions">
         @for (s of suggestions; track s.drug_id) {
           <li class="demo-suggestions__item"
@@ -60,6 +60,12 @@
             <span class="demo-suggestions__icon" aria-hidden="true">💊</span>
             <span class="demo-suggestions__name">{{ s.name }}</span>
           </li>
+        } @empty {
+          @if (!isSearching && hasSearched) {
+            <li class="demo-suggestions__item demo-suggestions__empty" role="status">
+              <em>No drugs match "{{ inputValue }}"</em>
+            </li>
+          }
         }
       </ul>
     }

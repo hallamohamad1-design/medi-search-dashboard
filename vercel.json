@@ -2,10 +2,23 @@
   "version": 2,
   "buildCommand": "npm run build:prod",
   "outputDirectory": "dist/medi-search-dashboard/browser",
-  "installCommand": "npm install --legacy-peer-deps",
+  "installCommand": "npm install --legacy-peer-deps && pip install -r BACK/requirements.txt",
   "framework": null,
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude)BACK'",
+  "builds": [
+    {
+      "src": "BACK/api/index.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build"
+    }
+  ],
   "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "BACK/api/index.py"
+    },
     {
       "src": "/assets/(.*)",
       "dest": "/assets/$1"

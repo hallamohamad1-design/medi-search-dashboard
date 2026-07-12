@@ -32,19 +32,21 @@ def low_stock():
     })
 
 
-@pharmacy.route("/api/analytics/pharmacy/analytics")
+@pharmacy.route("/api/analytics/pharmacy/<int:pharmacy_id>/analytics")
 @require_auth
-def pharmacy_dashboard():
+def pharmacy_dashboard(pharmacy_id: int):
     """
     Pharmacy dashboard analytics.
-    pharmacy_id is taken from the JWT token — never from the query string.
-    This ensures a pharmacy user can only see their own data.
+    pharmacy_id is verified against the JWT token to ensure scoping.
     """
     user        = request.user
-    pharmacy_id = user.get("pharmacy_id")
+    token_pharmacy_id = user.get("pharmacy_id")
 
-    if not pharmacy_id:
+    if not token_pharmacy_id:
         return jsonify({"success": False, "message": "No pharmacy linked to this account."}), 400
+        
+    if token_pharmacy_id != pharmacy_id:
+        return jsonify({"success": False, "message": "Forbidden — you cannot view another pharmacy's data."}), 403
 
     result = get_pharmacy_analytics_by_id(pharmacy_id)
 

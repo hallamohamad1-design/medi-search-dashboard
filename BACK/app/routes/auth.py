@@ -33,11 +33,15 @@ SETUP_SECRET = os.environ.get("SETUP_SECRET", "setup-secret-change-me")
 # ── Token extraction helper ───────────────────────────────────────────────────
 
 def get_token_payload():
-    """Extract and decode Bearer token from Authorization header."""
-    header = request.headers.get("Authorization", "")
-    if not header.startswith("Bearer "):
+    """Extract and decode token from cookie."""
+    token = request.cookies.get("session_token")
+    if not token:
+        # Fallback to Bearer just in case
+        header = request.headers.get("Authorization", "")
+        if header.startswith("Bearer "):
+            token = header[7:]
+    if not token:
         return None
-    token = header[7:]
     try:
         return decode_token(token)
     except jwt.ExpiredSignatureError:
@@ -90,9 +94,18 @@ def auth_login():
 
     try:
         token, user_info = login(username, password)
-        return jsonify({"success": True, "token": token, "user": user_info})
+        res = jsonify({"success": True, "token": token, "user": user_info})
+        res.set_cookie("session_token", token, httponly=True, samesite="Strict", secure=True)
+        return res
     except ValueError as e:
         return jsonify({"success": False, "message": str(e)}), 401
+
+@auth_bp.route("/api/auth/logout", methods=["POST"])
+def auth_logout():
+    """Logs the user out by clearing the session cookie."""
+    res = jsonify({"success": True})
+    res.delete_cookie("session_token")
+    return res
 
 
 @auth_bp.route("/api/auth/me")

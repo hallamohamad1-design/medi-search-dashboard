@@ -53,9 +53,9 @@ export class DashboardService {
   }
 
   // ── Pharmacy — token-scoped, no ?name= needed ─────────────────────────────
-  getPharmacyAnalytics(): Observable<PharmacyAnalyticsResponse> {
+  getPharmacyAnalytics(pharmacyId: number): Observable<PharmacyAnalyticsResponse> {
     return this.cachedGet<ApiResponse<PharmacyAnalyticsResponse>>(
-      'pharmacy:me', `${BASE}/api/analytics/pharmacy/analytics`,
+      `pharmacy:${pharmacyId}`, `${BASE}/api/analytics/pharmacy/${pharmacyId}/analytics`,
     ).pipe(
       map(res => {
         if (!res.success || !res.data) throw new Error(res.message ?? 'Pharmacy not found.');
@@ -64,11 +64,11 @@ export class DashboardService {
       shareReplay(1),
     );
   }
-  getPharmacyTraffic(): Observable<PageTrafficPoint[]> {
-    return this.getPharmacyAnalytics().pipe(map(r => r.page_traffic));
+  getPharmacyTraffic(pharmacyId: number): Observable<PageTrafficPoint[]> {
+    return this.getPharmacyAnalytics(pharmacyId).pipe(map(r => r.page_traffic));
   }
-  getLocalDrugTrends(): Observable<LocalDrugTrend[]> {
-    return this.getPharmacyAnalytics().pipe(map(r => r.drug_trends));
+  getLocalDrugTrends(pharmacyId: number): Observable<LocalDrugTrend[]> {
+    return this.getPharmacyAnalytics(pharmacyId).pipe(map(r => r.drug_trends));
   }
 
   // ── Low-stock ──────────────────────────────────────────────────────────────

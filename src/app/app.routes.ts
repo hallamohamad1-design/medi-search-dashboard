@@ -19,7 +19,7 @@ export const routes: Routes = [
       ),
     children: [
       {
-        path: 'pharmacy',
+        path: 'pharmacy/:pharmacyId',
         loadComponent: () =>
           import('./features/pharmacy-dashboard/pharmacy-dashboard.component').then(
             m => m.PharmacyDashboardComponent,

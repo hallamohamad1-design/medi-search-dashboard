@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, Input, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DashboardService } from '../../services/dashboard.service';
@@ -20,6 +20,8 @@ export class PharmacyDashboardComponent implements OnInit {
   private svc  = inject(DashboardService);
   private auth = inject(AuthService);
   private cdr  = inject(ChangeDetectorRef);
+
+  @Input() pharmacyId!: string;
 
   get pharmacyName(): string { return this.auth.currentUser?.pharmacy_name ?? '—'; }
 
@@ -63,10 +65,16 @@ export class PharmacyDashboardComponent implements OnInit {
   }
 
   private loadAnalytics(): void {
+    const id = Number(this.pharmacyId);
+    if (!id || isNaN(id)) {
+      this.trafficError = this.trendsError = 'Invalid Pharmacy ID in URL.';
+      this.trafficState = this.trendsState = 'error';
+      return;
+    }
     this.trafficState = this.trendsState = 'loading';
     this.cdr.markForCheck();
 
-    this.svc.getPharmacyAnalytics().subscribe({
+    this.svc.getPharmacyAnalytics(id).subscribe({
       next: data => {
         this.trafficLabels = data.page_traffic.map(d => {
           const dt = new Date(d.date_key);

@@ -25,6 +25,7 @@ export class DrugDetailDemoComponent implements OnDestroy {
   suggestions: { drug_id: number; name: string }[] = [];
   showDropdown = false;
   isSearching  = false;
+  hasSearched  = false;
 
   // ── Typeahead stream ──────────────────────────────────────────────────────
   private search$ = new Subject<string>();
@@ -38,18 +39,21 @@ export class DrugDetailDemoComponent implements OnDestroy {
           this.suggestions  = [];
           this.showDropdown = false;
           this.isSearching  = false;
+          this.hasSearched  = false;
           this.cdr.markForCheck();
           return [];
         }
         this.isSearching = true;
+        this.hasSearched = false;
         this.cdr.markForCheck();
         return this.svc.getDrugSuggestions(q);
       }),
       takeUntil(this.destroy),
     ).subscribe(results => {
       this.suggestions  = results;
-      this.showDropdown = results.length > 0;
+      this.showDropdown = true; // show dropdown even if empty to show the 'no match' message
       this.isSearching  = false;
+      this.hasSearched  = true;
       this.cdr.markForCheck();
     });
   }

@@ -231,16 +231,13 @@ export class AnalyticsChartsComponent implements OnInit {
     // Admin data — always load (analytics page is accessible to both roles)
     this.svc.getAdminAnalytics().subscribe({
       next: adminData => {
-        this.buildStackedBar(adminData.top_searched_drugs);
-        this.buildRadar(adminData.top_searched_drugs);
+        this.buildStackedBar(adminData.area_drug_trends);
+        this.buildRadar(adminData.area_drug_trends);
         this.buildBubble(adminData.top_searched_drugs);
         this.buildDoughnut(adminData.pharmacy_ranking);
         this.kpis.pharmacies = adminData.pharmacy_ranking.length;
 
-        // For admin, also derive traffic from ranking totals if no pharmacy traffic
         if (isAdmin && !pharmacyName) {
-          this.buildWeeklyVelocity();
-          this.buildGrowthChart();
           this.state = 'success';
         }
       },
@@ -278,7 +275,6 @@ export class AnalyticsChartsComponent implements OnInit {
   private buildTrafficCharts(data: PageTrafficPoint[]): void {
     const slice = this.selectedPeriod === '7d' ? 7 : this.selectedPeriod === '14d' ? 14 : 30;
     const recent = data.slice(-slice);
-    const prev   = recent.map(d => Math.round(d.number_of_views * (0.7 + Math.random() * 0.4)));
     const labels = recent.map(d => {
       const dt = new Date(d.date_key);
       return `${dt.getDate()} ${this.MONTHS[dt.getMonth()]}`;
@@ -300,50 +296,42 @@ export class AnalyticsChartsComponent implements OnInit {
           tension: 0.4,
           borderWidth: 2.5,
           order: 1,
-        },
-        {
-          label: 'Previous Period',
-          data: prev,
-          borderColor: PALETTE.violet,
-          backgroundColor: 'transparent',
-          pointBackgroundColor: PALETTE.violet,
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2,
-          pointRadius: 3,
-          borderDash: [5, 4],
-          fill: false,
-          tension: 0.4,
-          borderWidth: 2,
-          order: 2,
-        },
+        }
       ] as any[],
     };
 
     // KPIs
     const total = recent.reduce((s, d) => s + d.number_of_views, 0);
-    const prevTotal = prev.reduce((a, b) => a + b, 0);
     this.kpis.searches = total;
-    this.kpis.growth   = prevTotal ? Math.round(((total - prevTotal) / prevTotal) * 100) : 0;
-    const peak = recent.reduce((m, d) => d.number_of_views > m.number_of_views ? d : m, recent[0]);
+    this.kpis.growth   = 0; // Growth would require real previous period data
+    const peak = recent.length ? recent.reduce((m, d) => d.number_of_views > m.number_of_views ? d : m, recent[0]) : null;
     this.kpis.peakDay  = peak?.day_name ?? '—';
   }
 
-  private buildStackedBar(drugs: TopSearchedDrug[]): void {
-    const top5  = drugs.slice(0, 5);
-    const govs  = ['Cairo', 'Giza', 'Alexandria'];
-    const splits = [0.42, 0.31, 0.27]; // distribution weights
+  private buildStackedBar(trends: any[]): void {
+    if (!trends || !trends.length) return;
+    
+    // Get unique top drugs and governorates
+    const uniqueDrugs = [...new Set(trends.map(t => t.drug_name))].slice(0, 5);
+    const govs = [...new Set(trends.map(t => t.governorate))];
 
     this.stackedBarData = {
-      labels: top5.map(d => d.name),
-      datasets: govs.map((gov, i) => ({
-        label: gov,
-        data: top5.map(d => Math.round(d.total_searches * splits[i] * (0.85 + Math.random() * 0.3))),
-        backgroundColor: hex2rgba(Object.values(PALETTE)[i], 0.8),
-        borderColor:     Object.values(PALETTE)[i],
-        borderWidth: 1,
-        borderRadius: 4,
-        borderSkipped: false,
-      })) as any[],
+      labels: uniqueDrugs,
+      datasets: govs.map((gov, i) => {
+        const data = uniqueDrugs.map(d => {
+          const match = trends.find(t => t.drug_name === d && t.governorate === gov);
+          return match ? match.total_searches : 0;
+        });
+        return {
+          label: gov,
+          data: data,
+          backgroundColor: hex2rgba(Object.values(PALETTE)[i % 8], 0.8),
+          borderColor: Object.values(PALETTE)[i % 8],
+          borderWidth: 1,
+          borderRadius: 4,
+          borderSkipped: false,
+        };
+      }) as any[],
     };
   }
 
@@ -366,30 +354,38 @@ export class AnalyticsChartsComponent implements OnInit {
     this.kpis.pharmacies = ranking.length;
   }
 
-  private buildRadar(drugs: TopSearchedDrug[]): void {
-    const top6 = drugs.slice(0, 6);
-    const govs = ['Cairo', 'Giza', 'Alexandria', 'Assiut', 'Luxor'];
+  private buildRadar(trends: any[]): void {
+    if (!trends || !trends.length) return;
+    
+    const uniqueDrugs = [...new Set(trends.map(t => t.drug_name))].slice(0, 6);
+    const govs = [...new Set(trends.map(t => t.governorate))].slice(0, 5);
     const palArr = Object.values(PALETTE);
 
     this.radarData = {
-      labels: top6.map(d => d.name),
-      datasets: govs.map((gov, i) => ({
-        label: gov,
-        data: top6.map(d => Math.round(d.total_searches * (0.1 + Math.random() * 0.5))),
-        borderColor: palArr[i],
-        backgroundColor: hex2rgba(palArr[i], 0.1),
-        pointBackgroundColor: palArr[i],
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 3,
-        borderWidth: 2,
-      })) as any[],
+      labels: uniqueDrugs,
+      datasets: govs.map((gov, i) => {
+        const data = uniqueDrugs.map(d => {
+          const match = trends.find(t => t.drug_name === d && t.governorate === gov);
+          return match ? match.total_searches : 0;
+        });
+        return {
+          label: gov,
+          data: data,
+          borderColor: palArr[i % palArr.length],
+          backgroundColor: hex2rgba(palArr[i % palArr.length], 0.1),
+          pointBackgroundColor: palArr[i % palArr.length],
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 3,
+          borderWidth: 2,
+        };
+      }) as any[],
     };
   }
 
   private buildWeeklyVelocity(traffic?: PageTrafficPoint[]): void {
     const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-    let views  = [820, 910, 870, 780, 540, 630, 480];
+    let views  = [0, 0, 0, 0, 0, 0, 0];
 
     if (traffic && traffic.length) {
       const totals: Record<string, number> = {};
@@ -472,8 +468,8 @@ export class AnalyticsChartsComponent implements OnInit {
         label: d.name,
         data: [{
           x: d.total_searches,
-          y: Math.round(4 + Math.random() * 8),          // pharmacies carrying (1-12)
-          r: Math.round(4 + (d.total_searches / 2000)),   // bubble size ~ avg price
+          y: 0, // Need API support for pharmacies carrying
+          r: Math.round(4 + (d.total_searches / 2000)), // Approximate bubble size
         }],
         backgroundColor: hex2rgba(palArr[i % palArr.length], 0.65),
         borderColor:     palArr[i % palArr.length],
@@ -483,8 +479,8 @@ export class AnalyticsChartsComponent implements OnInit {
   }
 
   private buildGrowthChart(traffic?: PageTrafficPoint[]): void {
-    let labels: string[];
-    let cumulative: number[];
+    let labels: string[] = [];
+    let cumulative: number[] = [];
 
     if (traffic && traffic.length) {
       const byMonth: Record<string, number> = {};
@@ -496,13 +492,6 @@ export class AnalyticsChartsComponent implements OnInit {
       labels = Object.keys(byMonth);
       let cum = 0;
       cumulative = Object.values(byMonth).map(v => (cum += v));
-    } else {
-      labels = ['Jan','Feb','Mar','Apr','May','Jun'];
-      let running = 0;
-      cumulative  = labels.map((_, i) => {
-        running += 6200 + i * 800;
-        return running;
-      });
     }
 
     this.growthData = {
