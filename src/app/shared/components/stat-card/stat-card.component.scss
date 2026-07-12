@@ -1,0 +1,109 @@
+@use '../../../../styles/design-tokens' as *;
+@use '../../../../styles/mixins' as *;
+
+.stat-card {
+  @include card($space-6);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  transition: $transition-base;
+
+  &:hover { box-shadow: $shadow-lg; transform: translateY(-2px); }
+
+  // Color variants — accent band on top
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: $radius-lg $radius-lg 0 0;
+    background: var(--card-accent);
+  }
+  position: relative;
+  overflow: hidden;
+
+  &--primary { --card-accent: #{$color-primary-500}; }
+  &--success { --card-accent: #{$color-success}; }
+  &--warning { --card-accent: #{$color-warning}; }
+  &--error   { --card-accent: #{$color-error}; }
+  &--info    { --card-accent: #{$color-info}; }
+  &--neutral { --card-accent: #{$color-neutral-400}; }
+
+  // -------------------------------------------------------------------------
+  &__content {
+    display: flex;
+    gap: $space-4;
+    align-items: flex-start;
+  }
+
+  &__icon-wrap {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: $radius-lg;
+    @include flex-center;
+    background: color-mix(in srgb, var(--card-accent) 12%, transparent);
+  }
+
+  &__icon { font-size: 1.5rem; }
+
+  &__body { flex: 1; min-width: 0; }
+
+  &__value {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-primary;
+    line-height: $line-height-tight;
+  }
+
+  &__label {
+    margin-top: $space-1;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+  }
+
+  &__sublabel {
+    margin-top: $space-1;
+    font-size: $font-size-xs;
+    color: $color-text-muted;
+  }
+
+  &__trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: $space-2;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    background: $color-neutral-100;
+    padding: 2px $space-2;
+    border-radius: $radius-full;
+
+    &--up  { background: $color-success-bg; color: darken($color-success, 10%); }
+    &--down{ background: $color-error-bg;   color: darken($color-error, 5%); }
+  }
+
+  &__trend-label { color: $color-text-muted; font-weight: $font-weight-regular; }
+
+  // -------------------------------------------------------------------------
+  // Loading / skeleton
+  // -------------------------------------------------------------------------
+  &--loading { pointer-events: none; }
+
+  &__skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+  }
+}
+
+// Skeleton blocks
+.skel {
+  @include skeleton;
+  &--icon  { width: 48px; height: 48px; }
+  &--value { height: 32px; width: 80px; }
+  &--label { height: 14px; width: 120px; }
+}

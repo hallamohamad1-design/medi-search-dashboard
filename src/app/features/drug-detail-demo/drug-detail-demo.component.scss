@@ -1,0 +1,174 @@
+@use '../../../styles/design-tokens' as *;
+@use '../../../styles/mixins' as *;
+
+.demo-page {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: $space-6;
+  @include respond-below(md) { padding: $space-2; }
+}
+
+// Header
+.demo-header {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+
+  &__title { font-size: $font-size-2xl; font-weight: $font-weight-bold; }
+  &__sub   { color: $color-text-secondary; font-size: $font-size-sm; line-height: $line-height-relaxed; }
+
+  code, strong, em {
+    background: $color-neutral-100;
+    padding: 1px 5px;
+    border-radius: $radius-sm;
+    font-family: $font-family-mono;
+    font-size: 0.85em;
+    color: $color-primary-700;
+    font-style: normal;
+  }
+}
+
+// Presets
+.demo-picker {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex-wrap: wrap;
+
+  &__label { font-size: $font-size-sm; color: $color-text-muted; white-space: nowrap; }
+}
+
+// Search area
+.demo-search-wrap {
+  position: relative;
+}
+
+.demo-search {
+  display: flex;
+  gap: $space-3;
+
+  &__input-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  &__icon {
+    position: absolute;
+    left: $space-3;
+    font-size: 1rem;
+    pointer-events: none;
+  }
+
+  &__spinner {
+    position: absolute;
+    right: $space-3;
+    font-size: 0.9rem;
+    animation: spin 1s linear infinite;
+  }
+
+  &__input {
+    width: 100%;
+    padding: $space-3 $space-10 $space-3 $space-10;
+    border: 1.5px solid $color-border;
+    border-radius: $radius-md;
+    font-size: $font-size-base;
+    font-family: $font-family-base;
+    color: $color-text-primary;
+    background: $color-surface;
+    transition: $transition-fast;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary-500;
+      box-shadow: $shadow-focus;
+    }
+    &::placeholder { color: $color-text-muted; }
+  }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// Autocomplete dropdown
+.demo-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-xl;
+  list-style: none;
+  z-index: 50;
+  overflow: hidden;
+  animation: fade-in 0.15s ease;
+  max-height: 320px;
+  overflow-y: auto;
+  @include custom-scrollbar;
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    padding: $space-3 $space-4;
+    cursor: pointer;
+    transition: $transition-fast;
+    border-bottom: 1px solid $color-border;
+
+    &:last-child { border-bottom: none; }
+    &:hover      { background: $color-primary-50; }
+  }
+
+  &__icon { font-size: 1rem; flex-shrink: 0; }
+  &__name { font-size: $font-size-sm; color: $color-text-primary; }
+}
+
+// Active drug label
+.demo-active-label {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-4;
+  background: $color-primary-50;
+  border: 1px solid $color-primary-200;
+  border-radius: $radius-full;
+  font-size: $font-size-sm;
+  color: $color-primary-700;
+
+  strong { font-weight: $font-weight-semibold; }
+}
+
+// Code snippet
+.usage-snippet {
+  @include card($space-4);
+
+  summary {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+    cursor: pointer;
+    user-select: none;
+    &:hover { color: $color-text-primary; }
+  }
+
+  pre {
+    margin-top: $space-4;
+    background: $color-neutral-800;
+    border-radius: $radius-md;
+    padding: $space-4;
+    overflow-x: auto;
+    @include custom-scrollbar;
+  }
+
+  code {
+    font-family: $font-family-mono;
+    font-size: $font-size-xs;
+    color: $color-accent-300;
+    line-height: $line-height-relaxed;
+    white-space: pre;
+  }
+}

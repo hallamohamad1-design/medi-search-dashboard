@@ -1,0 +1,98 @@
+<div class="demo-page fade-in">
+
+  <header class="demo-header">
+    <a routerLink="/dashboard/pharmacy" class="btn btn--ghost btn--sm">← Back</a>
+    <h1 class="demo-header__title">Drug Analytics Widget</h1>
+    <p class="demo-header__sub">
+      Live data from <code>/api/analytics/drug-search?name=...</code>.
+      Supports partial search — type <strong>"pana"</strong> to find <em>Panadol Advance</em>.
+    </p>
+  </header>
+
+  <!-- Quick-select presets -->
+  <div class="demo-picker">
+    <span class="demo-picker__label">Quick select:</span>
+    @for (name of presets; track name) {
+      <button
+        class="btn btn--sm"
+        [class.btn--primary]="activeDrug === name"
+        [class.btn--secondary]="activeDrug !== name"
+        (click)="selectSuggestion(name)">
+        {{ name.length > 25 ? (name | slice:0:25) + '…' : name }}
+      </button>
+    }
+  </div>
+
+  <!-- Live search with autocomplete -->
+  <div class="demo-search-wrap">
+    <div class="demo-search">
+      <div class="demo-search__input-wrap">
+        <span class="demo-search__icon" aria-hidden="true">🔍</span>
+        <input
+          class="demo-search__input"
+          type="text"
+          placeholder="Type any drug name — e.g. 'pana', 'brufen', 'mebo'…"
+          [(ngModel)]="inputValue"
+          (ngModelChange)="onInput()"
+          (keyup.enter)="search()"
+          (blur)="closeSuggestions()"
+          autocomplete="off"
+          aria-label="Search drug by name"
+          aria-autocomplete="list"
+          [attr.aria-expanded]="showDropdown" />
+        @if (isSearching) {
+          <span class="demo-search__spinner" aria-label="Searching…">⏳</span>
+        }
+      </div>
+
+      <button class="btn btn--primary" (click)="search()" [disabled]="!inputValue.trim()">
+        Search
+      </button>
+    </div>
+
+    <!-- Autocomplete dropdown -->
+    @if (showDropdown) {
+      <ul class="demo-suggestions" role="listbox" aria-label="Drug suggestions">
+        @for (s of suggestions; track s.drug_id) {
+          <li class="demo-suggestions__item"
+              role="option"
+              (mousedown)="selectSuggestion(s.name)">
+            <span class="demo-suggestions__icon" aria-hidden="true">💊</span>
+            <span class="demo-suggestions__name">{{ s.name }}</span>
+          </li>
+        } @empty {
+          @if (!isSearching && hasSearched) {
+            <li class="demo-suggestions__item demo-suggestions__empty" role="status">
+              <em>No drugs match "{{ inputValue }}"</em>
+            </li>
+          }
+        }
+      </ul>
+    }
+  </div>
+
+  <!-- Active drug label -->
+  @if (activeDrug) {
+    <div class="demo-active-label">
+      Showing analytics for: <strong>{{ activeDrug }}</strong>
+    </div>
+  }
+
+  <!-- The reusable widget -->
+  <ms-drug-search-analytics [drugName]="activeDrug" />
+
+  <!-- Embed guide -->
+  <details class="usage-snippet">
+    <summary>How to embed this widget in the main app</summary>
+    <pre><code>// 1. Import:
+import &#123; DrugSearchAnalyticsComponent &#125; from
+  './shared/components/drug-search-analytics/drug-search-analytics.component';
+
+// 2. Add to imports[]:
+imports: [DrugSearchAnalyticsComponent]
+
+// 3. Use in template — partial name search supported:
+&lt;ms-drug-search-analytics [drugName]="drug.name" /&gt;</code></pre>
+  </details>
+
+</div>

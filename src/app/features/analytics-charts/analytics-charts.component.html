@@ -1,0 +1,274 @@
+<section class="ac-page fade-in" aria-labelledby="ac-title">
+
+  <!-- ── Page header ─────────────────────────────────────────────────────── -->
+  <header class="page-header">
+    <div>
+      <h1 class="page-header__title" id="ac-title">Analytics Charts</h1>
+      <p class="page-header__sub">Visual deep-dive across traffic, drug trends, and market distribution</p>
+    </div>
+
+    <!-- Period toggle -->
+    <div class="period-toggle" role="group" aria-label="Select time period">
+      <button class="period-toggle__btn" [class.period-toggle__btn--active]="selectedPeriod === '7d'"  (click)="onPeriodChange('7d')"  [attr.aria-pressed]="selectedPeriod === '7d'">7 Days</button>
+      <button class="period-toggle__btn" [class.period-toggle__btn--active]="selectedPeriod === '14d'" (click)="onPeriodChange('14d')" [attr.aria-pressed]="selectedPeriod === '14d'">14 Days</button>
+      <button class="period-toggle__btn" [class.period-toggle__btn--active]="selectedPeriod === '30d'" (click)="onPeriodChange('30d')" [attr.aria-pressed]="selectedPeriod === '30d'">30 Days</button>
+    </div>
+  </header>
+
+  <!-- ── KPI strip ────────────────────────────────────────────────────────── -->
+  <div class="kpi-strip" role="list">
+    <div class="kpi-strip__item" role="listitem">
+      <span class="kpi-strip__icon" aria-hidden="true">👁️</span>
+      <div>
+        <div class="kpi-strip__value">
+          @if (state === 'loading') { <span class="skel skel--kpi"></span> }
+          @else { {{ kpis.searches | number }} }
+        </div>
+        <div class="kpi-strip__label">Period Views</div>
+      </div>
+    </div>
+    <div class="kpi-strip__item" role="listitem">
+      <span class="kpi-strip__icon" aria-hidden="true">🏥</span>
+      <div>
+        <div class="kpi-strip__value">
+          @if (state === 'loading') { <span class="skel skel--kpi"></span> }
+          @else { {{ kpis.pharmacies }} }
+        </div>
+        <div class="kpi-strip__label">Active Pharmacies</div>
+      </div>
+    </div>
+    <div class="kpi-strip__item" role="listitem">
+      <span class="kpi-strip__icon" aria-hidden="true">🏆</span>
+      <div>
+        <div class="kpi-strip__value">
+          @if (state === 'loading') { <span class="skel skel--kpi"></span> }
+          @else { {{ kpis.peakDay }} }
+        </div>
+        <div class="kpi-strip__label">Peak Day</div>
+      </div>
+    </div>
+    <div class="kpi-strip__item" role="listitem">
+      <span class="kpi-strip__icon" aria-hidden="true">📈</span>
+      <div>
+        <div class="kpi-strip__value"
+             [class.kpi-strip__value--up]="kpis.growth > 0"
+             [class.kpi-strip__value--down]="kpis.growth < 0">
+          @if (state === 'loading') { <span class="skel skel--kpi"></span> }
+          @else { {{ kpis.growth > 0 ? '+' : '' }}{{ kpis.growth }}% }
+        </div>
+        <div class="kpi-strip__label">vs Previous Period</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Error banner ─────────────────────────────────────────────────────── -->
+  @if (state === 'error') {
+    <div class="error-state" role="alert">
+      <span class="error-state__icon" aria-hidden="true">⚠️</span>
+      <p class="error-state__title">Could not load chart data — the data warehouse may be warming up.</p>
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       Row 1 — Full-width: Traffic Comparison (this period vs prev period)
+       ══════════════════════════════════════════════════════════════════════ -->
+  <article class="chart-card chart-card--full" aria-label="Traffic period comparison">
+    <div class="chart-card__header">
+      <div>
+        <h2 class="chart-card__title">Period-over-Period Traffic</h2>
+        <p class="chart-card__sub">Daily views — this period vs previous (dashed)</p>
+      </div>
+      <span class="badge badge--primary">Line</span>
+    </div>
+
+    <div class="chart-wrap chart-wrap--lg">
+      @if (state === 'loading') { <div class="chart-skeleton"></div> }
+      @else if (isBrowser && trafficCompareData) {
+        <canvas baseChart
+          type="line"
+          [data]="trafficCompareData"
+          [options]="trafficCompareOptions"
+          role="img" aria-label="Traffic comparison line chart">
+        </canvas>
+      }
+    </div>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       Row 2 — Mixed chart (bar + line overlay) | Doughnut market share
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div class="chart-row">
+
+    <!-- Mixed: Daily views bar + cumulative line -->
+    <article class="chart-card" aria-label="Daily views with cumulative overlay">
+      <div class="chart-card__header">
+        <div>
+          <h2 class="chart-card__title">Views + Cumulative Trend</h2>
+          <p class="chart-card__sub">Daily bars with running total overlay (last 14 days)</p>
+        </div>
+        <span class="badge badge--info">Mixed</span>
+      </div>
+      <div class="chart-wrap">
+        @if (state === 'loading') { <div class="chart-skeleton"></div> }
+        @else if (isBrowser && mixedData) {
+          <canvas baseChart
+            type="bar"
+            [data]="mixedData"
+            [options]="mixedOptions"
+            role="img" aria-label="Mixed bar and line chart">
+          </canvas>
+        }
+      </div>
+    </article>
+
+    <!-- Doughnut: pharmacy market share -->
+    <article class="chart-card" aria-label="Pharmacy market share by views">
+      <div class="chart-card__header">
+        <div>
+          <h2 class="chart-card__title">Pharmacy Market Share</h2>
+          <p class="chart-card__sub">Share of total views per pharmacy</p>
+        </div>
+        <span class="badge badge--success">Doughnut</span>
+      </div>
+      <div class="chart-wrap chart-wrap--doughnut">
+        @if (state === 'loading') { <div class="chart-skeleton chart-skeleton--circle"></div> }
+        @else if (isBrowser && doughnutData) {
+          <canvas baseChart
+            type="doughnut"
+            [data]="doughnutData"
+            [options]="doughnutOptions"
+            role="img" aria-label="Pharmacy market share doughnut chart">
+          </canvas>
+        }
+      </div>
+    </article>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       Row 3 — Stacked bar (drugs × governorate) | Radar (drug intensity)
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div class="chart-row">
+
+    <!-- Stacked bar -->
+    <article class="chart-card" aria-label="Drug searches stacked by governorate">
+      <div class="chart-card__header">
+        <div>
+          <h2 class="chart-card__title">Drug Searches by Governorate</h2>
+          <p class="chart-card__sub">Top 5 drugs, stacked by region</p>
+        </div>
+        <span class="badge badge--warning">Stacked Bar</span>
+      </div>
+      <div class="chart-wrap">
+        @if (state === 'loading') { <div class="chart-skeleton"></div> }
+        @else if (isBrowser && stackedBarData) {
+          <canvas baseChart
+            type="bar"
+            [data]="stackedBarData"
+            [options]="stackedBarOptions"
+            role="img" aria-label="Stacked bar chart of drug searches by governorate">
+          </canvas>
+        }
+      </div>
+    </article>
+
+    <!-- Radar -->
+    <article class="chart-card" aria-label="Drug search intensity radar by governorate">
+      <div class="chart-card__header">
+        <div>
+          <h2 class="chart-card__title">Search Intensity by Region</h2>
+          <p class="chart-card__sub">Drug search volume across governorates</p>
+        </div>
+        <span class="badge badge--neutral">Radar</span>
+      </div>
+      <div class="chart-wrap chart-wrap--radar">
+        @if (state === 'loading') { <div class="chart-skeleton chart-skeleton--circle"></div> }
+        @else if (isBrowser && radarData) {
+          <canvas baseChart
+            type="radar"
+            [data]="radarData"
+            [options]="radarOptions"
+            role="img" aria-label="Radar chart of drug search intensity by region">
+          </canvas>
+        }
+      </div>
+    </article>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       Row 4 — Weekly velocity (horizontal bar) | Cumulative growth (area)
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div class="chart-row">
+
+    <!-- Weekly velocity horizontal bar -->
+    <article class="chart-card" aria-label="Average searches by day of week">
+      <div class="chart-card__header">
+        <div>
+          <h2 class="chart-card__title">Weekly Search Velocity</h2>
+          <p class="chart-card__sub">Avg searches per day of week — spot your busiest days</p>
+        </div>
+        <span class="badge badge--primary">Horizontal Bar</span>
+      </div>
+      <div class="chart-wrap">
+        @if (isBrowser && weeklyVelocityData) {
+          <canvas baseChart
+            type="bar"
+            [data]="weeklyVelocityData"
+            [options]="weeklyVelocityOptions"
+            role="img" aria-label="Weekly search velocity horizontal bar chart">
+          </canvas>
+        }
+      </div>
+    </article>
+
+    <!-- Cumulative growth area -->
+    <article class="chart-card" aria-label="Cumulative search growth">
+      <div class="chart-card__header">
+        <div>
+          <h2 class="chart-card__title">Cumulative Search Growth</h2>
+          <p class="chart-card__sub">Running total of searches across all pharmacies</p>
+        </div>
+        <span class="badge badge--neutral">Area</span>
+      </div>
+      <div class="chart-wrap">
+        @if (isBrowser && growthData) {
+          <canvas baseChart
+            type="line"
+            [data]="growthData"
+            [options]="growthOptions"
+            role="img" aria-label="Cumulative growth area chart">
+          </canvas>
+        }
+      </div>
+    </article>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       Row 5 — Full-width bubble chart
+       ══════════════════════════════════════════════════════════════════════ -->
+  <article class="chart-card chart-card--full" aria-label="Drug bubble chart: searches vs pharmacies vs price">
+    <div class="chart-card__header">
+      <div>
+        <h2 class="chart-card__title">Drug Demand vs Supply Bubble Chart</h2>
+        <p class="chart-card__sub">
+          X = total searches &nbsp;·&nbsp; Y = pharmacies carrying &nbsp;·&nbsp; Bubble size ≈ avg price
+        </p>
+      </div>
+      <span class="badge badge--error">Bubble</span>
+    </div>
+    <div class="chart-wrap chart-wrap--lg">
+      @if (state === 'loading') { <div class="chart-skeleton"></div> }
+      @else if (isBrowser && bubbleData) {
+        <canvas baseChart
+          type="bubble"
+          [data]="bubbleData"
+          [options]="bubbleOptions"
+          role="img" aria-label="Bubble chart showing drug demand vs supply correlation">
+        </canvas>
+      }
+    </div>
+  </article>
+
+</section>

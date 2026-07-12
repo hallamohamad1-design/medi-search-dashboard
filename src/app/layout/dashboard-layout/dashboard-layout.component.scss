@@ -1,0 +1,341 @@
+@use '../../../styles/design-tokens' as *;
+@use '../../../styles/mixins' as *;
+
+// =============================================================================
+// Dashboard Layout — sidebar + topbar + content
+// =============================================================================
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: $color-bg;
+}
+
+// =============================================================================
+// Sidebar
+// =============================================================================
+.sidebar {
+  width: $sidebar-width;
+  min-height: 100vh;
+  background: linear-gradient(180deg, $color-primary-800 0%, $color-primary-900 100%);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: width $transition-slow;
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+
+  .layout--collapsed & { width: $sidebar-collapsed; }
+
+  // Brand
+  &__brand {
+    @include flex-between;
+    padding: $space-4 $space-4 $space-4 $space-5;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    min-height: $topbar-height;
+  }
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    text-decoration: none;
+    min-width: 0;
+  }
+
+  &__logo-icon { font-size: 1.5rem; flex-shrink: 0; }
+
+  &__logo-text {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $color-text-inverse;
+    @include truncate;
+  }
+
+  &__toggle {
+    color: rgba(255,255,255,0.6) !important;
+    font-size: $font-size-sm;
+    flex-shrink: 0;
+    &:hover { color: $color-text-inverse !important; background: rgba(255,255,255,0.08) !important; }
+  }
+
+  // User block
+  &__user {
+    display: flex;
+    align-items: flex-start;
+    gap: $space-3;
+    padding: $space-4 $space-5;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+  }
+
+  &__user-avatar {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: $radius-full;
+    background: $color-accent-500;
+    @include flex-center;
+    font-weight: $font-weight-bold;
+    font-size: $font-size-sm;
+    color: $color-text-inverse;
+  }
+
+  &__user-info { min-width: 0; flex: 1; }
+  &__user-name  { font-size: $font-size-sm; font-weight: $font-weight-semibold; color: $color-text-inverse; @include truncate; }
+  &__user-role  { margin-top: 2px; }
+  &__user-pharmacy { font-size: $font-size-xs; color: rgba(255,255,255,0.5); margin-top: 2px; @include truncate; }
+
+  // Nav
+  &__nav {
+    flex: 1;
+    padding: $space-4 $space-3;
+    overflow-y: auto;
+    @include custom-scrollbar;
+
+    ul { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+  }
+
+  &__nav-item {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    padding: $space-3 $space-3;
+    border-radius: $radius-md;
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    transition: $transition-fast;
+    white-space: nowrap;
+
+    &:hover {
+      background: rgba(255,255,255,0.08);
+      color: $color-text-inverse;
+    }
+
+    &--active {
+      background: rgba(255,255,255,0.12);
+      color: $color-text-inverse;
+      position: relative;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 60%;
+        background: $color-accent-400;
+        border-radius: 0 $radius-full $radius-full 0;
+      }
+    }
+  }
+
+  &__nav-icon { font-size: 1.1rem; flex-shrink: 0; }
+  &__nav-label { @include truncate; }
+
+  // Footer
+  &__footer {
+    padding: $space-4 $space-5;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  &__footer-link {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    color: rgba(255,255,255,0.5);
+    font-size: $font-size-xs;
+    text-decoration: none;
+    transition: $transition-fast;
+    &:hover { color: rgba(255,255,255,0.9); }
+  }
+}
+
+// =============================================================================
+// Main + Topbar
+// =============================================================================
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  @include flex-between;
+  height: $topbar-height;
+  padding: 0 $space-6;
+  background: $color-surface;
+  border-bottom: 1px solid $color-border;
+  box-shadow: $shadow-sm;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  &__left, &__right { display: flex; align-items: center; gap: $space-4; }
+
+  &__menu-btn {
+    display: none;
+    @include respond-below(lg) { display: flex; }
+  }
+
+  &__breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+  }
+
+  &__breadcrumb-sep { color: $color-border; }
+  &__breadcrumb-active { color: $color-text-primary; font-weight: $font-weight-medium; }
+
+  &__refresh-note {
+    font-size: $font-size-xs;
+    color: $color-text-muted;
+    background: $color-neutral-100;
+    padding: $space-1 $space-3;
+    border-radius: $radius-full;
+  }
+
+  &__user-chip {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    padding: $space-1 $space-3 $space-1 $space-1;
+    background: $color-neutral-100;
+    border-radius: $radius-full;
+    font-size: $font-size-sm;
+  }
+
+  &__user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: $radius-full;
+    background: $color-primary-500;
+    @include flex-center;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-bold;
+    color: $color-text-inverse;
+  }
+
+  &__user-name { font-weight: $font-weight-medium; color: $color-text-primary; }
+}
+
+// Content
+.content {
+  flex: 1;
+  padding: $space-8 $space-6;
+  max-width: $content-max-width;
+  width: 100%;
+  margin: 0 auto;
+
+  @include respond-below(md) { padding: $space-4 $space-4; }
+}
+
+// Mobile sidebar overlay
+@include respond-below(lg) {
+  .layout {
+    position: relative;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform $transition-slow;
+
+    .layout:not(.layout--collapsed) & {
+      transform: translateX(0);
+    }
+  }
+}
+
+// Pharmacy switcher (dev helper in sidebar)
+.sidebar {
+  &__pharmacy-switch {
+    padding: $space-2 $space-5 $space-3;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  &__switch-label {
+    display: block;
+    font-size: $font-size-xs;
+    color: rgba(255,255,255,0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: $space-1;
+  }
+
+  &__switch-select {
+    width: 100%;
+    padding: $space-2 $space-3;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: $radius-md;
+    color: $color-text-inverse;
+    font-size: $font-size-xs;
+    font-family: $font-family-base;
+    cursor: pointer;
+    appearance: none;
+
+    &:focus { outline: none; border-color: $color-accent-400; }
+    option  { background: $color-primary-800; color: $color-text-inverse; }
+  }
+
+  // Role switcher buttons
+  &__role-switch {
+    display: flex;
+    gap: $space-1;
+    margin-bottom: $space-3;
+  }
+
+  &__role-btn {
+    flex: 1;
+    padding: $space-1 $space-2;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: $radius-md;
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    font-size: $font-size-xs;
+    font-family: $font-family-base;
+    cursor: pointer;
+    transition: $transition-fast;
+
+    &:hover { background: rgba(255,255,255,0.08); color: $color-text-inverse; }
+
+    &--active {
+      background: $color-accent-500;
+      border-color: $color-accent-500;
+      color: $color-text-inverse;
+    }
+  }
+}
+
+// Footer actions row
+.sidebar {
+  &__footer-actions {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+  }
+
+  &__logout-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: $font-family-base;
+    width: 100%;
+    color: rgba(255,255,255,0.45);
+    &:hover { color: $color-error; }
+  }
+}

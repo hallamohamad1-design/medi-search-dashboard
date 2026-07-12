@@ -1,0 +1,49 @@
+<div class="stat-card stat-card--{{ variant }}" [class.stat-card--loading]="loading" role="region" [attr.aria-label]="label">
+
+  <!-- Skeleton state -->
+  @if (loading) {
+    <div class="stat-card__skeleton">
+      <div class="skel skel--icon"></div>
+      <div class="skel skel--value"></div>
+      <div class="skel skel--label"></div>
+    </div>
+  }
+
+  <!-- Loaded state -->
+  @if (!loading) {
+    <div class="stat-card__content">
+      @if (icon) {
+        <div class="stat-card__icon-wrap" aria-hidden="true">
+          <span class="stat-card__icon">{{ icon }}</span>
+        </div>
+      }
+
+      <div class="stat-card__body">
+        <div class="stat-card__value">{{ value }}</div>
+        <div class="stat-card__label">{{ label }}</div>
+
+        @if (sublabel) {
+          <div class="stat-card__sublabel">{{ sublabel }}</div>
+        }
+
+        @if (trend !== null) {
+          <div class="stat-card__trend"
+               [class.stat-card__trend--up]="trend > 0"
+               [class.stat-card__trend--down]="trend < 0"
+               [attr.aria-label]="(trend > 0 ? 'Up' : 'Down') + ' ' + trendLabel">
+            <span class="stat-card__trend-arrow" aria-hidden="true">
+              {{ trend > 0 ? '▲' : trend < 0 ? '▼' : '─' }}
+            </span>
+            <span class="stat-card__trend-value">
+              {{ trend > 0 ? '+' : '' }}{{ trend }}%
+            </span>
+            @if (trendLabel) {
+              <span class="stat-card__trend-label">{{ trendLabel }}</span>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+</div>

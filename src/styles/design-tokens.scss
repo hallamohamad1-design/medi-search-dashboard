@@ -1,0 +1,229 @@
+// =============================================================================
+// MediSearch Design Tokens
+// Derived from https://medi-search-eight.vercel.app/
+// =============================================================================
+
+// ---------------------------------------------------------------------------
+// Color Palette
+// Primary: Deep teal/blue — the core brand color from the nav & CTAs
+// Secondary: Soft teal accent used in badges and highlights
+// ---------------------------------------------------------------------------
+
+// Brand colors (extracted from rendered site: nav bar, buttons, hero gradient)
+$color-primary-50:    #e8f4f8;
+$color-primary-100:   #c5e3ef;
+$color-primary-200:   #9fd1e6;
+$color-primary-300:   #72bedb;
+$color-primary-400:   #4aaeD4;
+$color-primary-500:   #1a9fc9;   // Main primary (nav bg, primary buttons)
+$color-primary-600:   #0d8ab3;
+$color-primary-700:   #0a7499;
+$color-primary-800:   #085d7d;
+$color-primary-900:   #054561;
+
+// Accent / secondary — warm teal used for "In Stock" badge, highlights
+$color-accent-50:     #e6f9f5;
+$color-accent-100:    #b3efe3;
+$color-accent-200:    #80e5d0;
+$color-accent-300:    #4ddbbd;
+$color-accent-400:    #26d1ac;
+$color-accent-500:    #12c09a;   // Accent CTA, success states
+$color-accent-600:    #0ea484;
+$color-accent-700:    #0b876e;
+$color-accent-800:    #086957;
+$color-accent-900:    #054c3f;
+
+// Neutral scale
+$color-neutral-0:     #ffffff;
+$color-neutral-50:    #f8fafb;
+$color-neutral-100:   #f1f4f6;
+$color-neutral-200:   #e4e9ed;
+$color-neutral-300:   #cdd5da;
+$color-neutral-400:   #9daab3;
+$color-neutral-500:   #6e808c;
+$color-neutral-600:   #4a5c66;
+$color-neutral-700:   #334048;
+$color-neutral-800:   #1e2a30;
+$color-neutral-900:   #0f161a;
+
+// Semantic / state colors
+$color-success:       #12c09a;
+$color-success-bg:    #e6f9f5;
+$color-warning:       #f59e0b;
+$color-warning-bg:    #fef3c7;
+$color-error:         #ef4444;
+$color-error-bg:      #fee2e2;
+$color-info:          #3b82f6;
+$color-info-bg:       #dbeafe;
+
+// ---------------------------------------------------------------------------
+// Surface / Layout
+// ---------------------------------------------------------------------------
+$color-bg:            #f3f7fa;   // Page background (off-white with blue tint)
+$color-surface:       #ffffff;   // Card / panel surface
+$color-surface-2:     #f8fafb;   // Secondary surface (table rows, inputs)
+$color-border:        #e4e9ed;
+$color-border-focus:  $color-primary-500;
+
+// Text
+$color-text-primary:  #1e2a30;
+$color-text-secondary:#4a5c66;
+$color-text-muted:    #6e808c;
+$color-text-inverse:  #ffffff;
+$color-text-link:     $color-primary-600;
+
+// ---------------------------------------------------------------------------
+// Typography
+// Site uses Inter / system-ui with a clean sans-serif stack
+// Arabic content uses the same stack with RTL direction
+// ---------------------------------------------------------------------------
+$font-family-base:    'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+$font-family-arabic:  'Cairo', 'Tajawal', $font-family-base;
+$font-family-mono:    'JetBrains Mono', 'Fira Code', monospace;
+
+$font-size-xs:        0.75rem;    // 12px
+$font-size-sm:        0.875rem;   // 14px
+$font-size-base:      1rem;       // 16px
+$font-size-md:        1.125rem;   // 18px
+$font-size-lg:        1.25rem;    // 20px
+$font-size-xl:        1.5rem;     // 24px
+$font-size-2xl:       1.875rem;   // 30px
+$font-size-3xl:       2.25rem;    // 36px
+$font-size-4xl:       3rem;       // 48px
+
+$font-weight-regular: 400;
+$font-weight-medium:  500;
+$font-weight-semibold:600;
+$font-weight-bold:    700;
+$font-weight-extrabold:800;
+
+$line-height-tight:   1.25;
+$line-height-snug:    1.375;
+$line-height-normal:  1.5;
+$line-height-relaxed: 1.625;
+
+// ---------------------------------------------------------------------------
+// Spacing Scale (4px base unit)
+// ---------------------------------------------------------------------------
+$space-1:   0.25rem;   // 4px
+$space-2:   0.5rem;    // 8px
+$space-3:   0.75rem;   // 12px
+$space-4:   1rem;      // 16px
+$space-5:   1.25rem;   // 20px
+$space-6:   1.5rem;    // 24px
+$space-8:   2rem;      // 32px
+$space-10:  2.5rem;    // 40px
+$space-12:  3rem;      // 48px
+$space-16:  4rem;      // 64px
+$space-20:  5rem;      // 80px
+
+// ---------------------------------------------------------------------------
+// Border Radius
+// Site uses a modern rounded card style (8px cards, 24px pills)
+// ---------------------------------------------------------------------------
+$radius-sm:    4px;
+$radius-md:    8px;
+$radius-lg:    12px;
+$radius-xl:    16px;
+$radius-2xl:   24px;
+$radius-full:  9999px;
+
+// ---------------------------------------------------------------------------
+// Shadows (cards lift gently — consistent with the site's clean aesthetic)
+// ---------------------------------------------------------------------------
+$shadow-xs:   0 1px 2px 0 rgba(30, 42, 48, 0.04);
+$shadow-sm:   0 1px 3px 0 rgba(30, 42, 48, 0.06), 0 1px 2px -1px rgba(30, 42, 48, 0.04);
+$shadow-md:   0 4px 6px -1px rgba(30, 42, 48, 0.07), 0 2px 4px -2px rgba(30, 42, 48, 0.05);
+$shadow-lg:   0 10px 15px -3px rgba(30, 42, 48, 0.08), 0 4px 6px -4px rgba(30, 42, 48, 0.04);
+$shadow-xl:   0 20px 25px -5px rgba(30, 42, 48, 0.1), 0 8px 10px -6px rgba(30, 42, 48, 0.04);
+$shadow-focus:0 0 0 3px rgba(26, 159, 201, 0.3);
+
+// ---------------------------------------------------------------------------
+// Transitions
+// ---------------------------------------------------------------------------
+$transition-fast:   all 0.15s ease;
+$transition-base:   all 0.2s ease;
+$transition-slow:   all 0.3s ease;
+
+// ---------------------------------------------------------------------------
+// Layout / Breakpoints
+// ---------------------------------------------------------------------------
+$sidebar-width:       260px;
+$sidebar-collapsed:   72px;
+$topbar-height:       64px;
+$content-max-width:   1280px;
+
+$breakpoint-sm:   576px;
+$breakpoint-md:   768px;
+$breakpoint-lg:   992px;
+$breakpoint-xl:   1200px;
+$breakpoint-2xl:  1400px;
+
+// ---------------------------------------------------------------------------
+// Chart colors — a palette that harmonizes with the brand
+// ---------------------------------------------------------------------------
+$chart-color-1:  #1a9fc9;   // primary
+$chart-color-2:  #12c09a;   // accent
+$chart-color-3:  #3b82f6;   // info blue
+$chart-color-4:  #f59e0b;   // amber
+$chart-color-5:  #8b5cf6;   // violet
+$chart-color-6:  #ef4444;   // red
+$chart-color-7:  #10b981;   // emerald
+$chart-color-8:  #f97316;   // orange
+
+// ---------------------------------------------------------------------------
+// CSS Custom Properties (also emitted so non-SCSS parts can consume them)
+// ---------------------------------------------------------------------------
+:root {
+  // Colors
+  --color-primary:          #{$color-primary-500};
+  --color-primary-dark:     #{$color-primary-700};
+  --color-primary-light:    #{$color-primary-100};
+  --color-accent:           #{$color-accent-500};
+  --color-accent-dark:      #{$color-accent-700};
+  --color-accent-light:     #{$color-accent-100};
+
+  --color-bg:               #{$color-bg};
+  --color-surface:          #{$color-surface};
+  --color-surface-2:        #{$color-surface-2};
+  --color-border:           #{$color-border};
+
+  --color-text-primary:     #{$color-text-primary};
+  --color-text-secondary:   #{$color-text-secondary};
+  --color-text-muted:       #{$color-text-muted};
+  --color-text-inverse:     #{$color-text-inverse};
+
+  --color-success:          #{$color-success};
+  --color-success-bg:       #{$color-success-bg};
+  --color-warning:          #{$color-warning};
+  --color-warning-bg:       #{$color-warning-bg};
+  --color-error:            #{$color-error};
+  --color-error-bg:         #{$color-error-bg};
+  --color-info:             #{$color-info};
+  --color-info-bg:          #{$color-info-bg};
+
+  // Typography
+  --font-family-base:       #{$font-family-base};
+  --font-size-base:         #{$font-size-base};
+
+  // Spacing
+  --space-4:                #{$space-4};
+  --space-6:                #{$space-6};
+  --space-8:                #{$space-8};
+
+  // Radius
+  --radius-md:              #{$radius-md};
+  --radius-lg:              #{$radius-lg};
+
+  // Layout
+  --sidebar-width:          #{$sidebar-width};
+  --sidebar-collapsed:      #{$sidebar-collapsed};
+  --topbar-height:          #{$topbar-height};
+
+  // Chart colors
+  --chart-1:  #{$chart-color-1};
+  --chart-2:  #{$chart-color-2};
+  --chart-3:  #{$chart-color-3};
+  --chart-4:  #{$chart-color-4};
+  --chart-5:  #{$chart-color-5};
+}

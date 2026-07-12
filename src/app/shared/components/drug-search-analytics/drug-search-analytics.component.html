@@ -1,0 +1,148 @@
+<div class="dsa-card" role="region" aria-label="Drug search analytics">
+
+  <!-- ── Loading skeleton ── -->
+  @if (state === 'loading') {
+    <div class="dsa-card__skeleton" aria-busy="true" aria-label="Loading analytics">
+      <div class="dsa-skeleton__header">
+        <div class="skel skel--title"></div>
+        <div class="skel skel--badge"></div>
+      </div>
+      <div class="dsa-skeleton__grid">
+        @for (i of [1,2,3,4,5,6]; track i) {
+          <div class="dsa-skeleton__stat">
+            <div class="skel skel--label"></div>
+            <div class="skel skel--value"></div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ── Error state ── -->
+  @if (state === 'error') {
+    <div class="dsa-card__error" role="alert">
+      <span class="dsa-card__error-icon" aria-hidden="true">⚠️</span>
+      <p class="dsa-card__error-msg">{{ error }}</p>
+      <button class="btn btn--secondary btn--sm" (click)="retry()">Retry</button>
+    </div>
+  }
+
+  <!-- ── Loaded ── -->
+  @if (state === 'success' && analytics) {
+    <div class="dsa-card__inner fade-in">
+
+      <!-- Header -->
+      <div class="dsa-card__header">
+        <div class="dsa-card__title-group">
+          <span class="dsa-card__icon" aria-hidden="true">💊</span>
+          <div>
+            <h3 class="dsa-card__title">{{ analytics.drug_name }}</h3>
+            <p class="dsa-card__subtitle">Search & availability analytics</p>
+          </div>
+        </div>
+        <!-- Availability pill -->
+        <span
+          class="badge badge--{{ availabilityClass }} dsa-card__avail-badge"
+          [attr.aria-label]="'Availability: ' + analytics.availability_percent + '%'">
+          {{ analytics.availability_percent }}% available
+        </span>
+      </div>
+
+      <!-- Stats grid -->
+      <div class="dsa-stats" role="list">
+
+        <!-- Avg price -->
+        <div class="dsa-stat" role="listitem">
+          <span class="dsa-stat__icon" aria-hidden="true">💰</span>
+          <div class="dsa-stat__body">
+            <span class="dsa-stat__label">Avg Price</span>
+            <span class="dsa-stat__value">
+              {{ analytics.avg_price | number:'1.0-0' }} EGP
+            </span>
+          </div>
+        </div>
+
+        <!-- Lowest price -->
+        <div class="dsa-stat dsa-stat--highlight-low" role="listitem">
+          <span class="dsa-stat__icon" aria-hidden="true">📉</span>
+          <div class="dsa-stat__body">
+            <span class="dsa-stat__label">Lowest Price</span>
+            <span class="dsa-stat__value dsa-stat__value--success">
+              {{ analytics.lowest_price | number:'1.0-0' }} EGP
+            </span>
+          </div>
+        </div>
+
+        <!-- Highest price -->
+        <div class="dsa-stat" role="listitem">
+          <span class="dsa-stat__icon" aria-hidden="true">📈</span>
+          <div class="dsa-stat__body">
+            <span class="dsa-stat__label">Highest Price</span>
+            <span class="dsa-stat__value dsa-stat__value--muted">
+              {{ analytics.highest_price | number:'1.0-0' }} EGP
+            </span>
+          </div>
+        </div>
+
+        <!-- Pharmacies in stock -->
+        <div class="dsa-stat" role="listitem">
+          <span class="dsa-stat__icon" aria-hidden="true">✅</span>
+          <div class="dsa-stat__body">
+            <span class="dsa-stat__label">In Stock</span>
+            <span class="dsa-stat__value">
+              {{ analytics.pharmacies_in_stock }}
+              <span class="dsa-stat__unit">pharmacies</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Pharmacies carrying -->
+        <div class="dsa-stat" role="listitem">
+          <span class="dsa-stat__icon" aria-hidden="true">🏥</span>
+          <div class="dsa-stat__body">
+            <span class="dsa-stat__label">Carrying</span>
+            <span class="dsa-stat__value">
+              {{ analytics.pharmacies_carrying }}
+              <span class="dsa-stat__unit">pharmacies</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Price spread -->
+        <div class="dsa-stat" role="listitem"
+             [attr.aria-label]="'Price spread: ' + priceSpreadPct + '% of average'">
+          <span class="dsa-stat__icon" aria-hidden="true">↔️</span>
+          <div class="dsa-stat__body">
+            <span class="dsa-stat__label">Price Spread</span>
+            <span class="dsa-stat__value"
+                  [class.dsa-stat__value--warning]="priceSpreadPct > 30">
+              {{ priceSpreadPct }}%
+              <span class="dsa-stat__unit">of avg</span>
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Availability bar -->
+      <div class="dsa-avail-bar" aria-label="Availability bar">
+        <div class="dsa-avail-bar__labels">
+          <span class="dsa-avail-bar__label">Availability</span>
+          <span class="dsa-avail-bar__pct">
+            {{ analytics.pharmacies_in_stock }} / {{ analytics.pharmacies_carrying }}
+          </span>
+        </div>
+        <div class="dsa-avail-bar__track" role="progressbar"
+             [attr.aria-valuenow]="analytics.availability_percent"
+             aria-valuemin="0" aria-valuemax="100">
+          <div
+            class="dsa-avail-bar__fill dsa-avail-bar__fill--{{ availabilityClass }}"
+            [style.width.%]="analytics.availability_percent">
+          </div>
+        </div>
+      </div>
+
+    </div>
+  }
+
+</div>

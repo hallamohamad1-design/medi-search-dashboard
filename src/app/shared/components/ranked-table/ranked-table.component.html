@@ -1,0 +1,90 @@
+<div class="ranked-table-wrap">
+
+  <!-- Error state -->
+  @if (error) {
+    <div class="error-state" role="alert">
+      <span class="error-state__icon" aria-hidden="true">⚠️</span>
+      <p class="error-state__title">{{ errorMessage }}</p>
+    </div>
+  }
+
+  <!-- Loading state -->
+  @if (!error) {
+    <div class="ranked-table-scroll" [class.ranked-table-scroll--loading]="loading">
+      <table class="ms-table" role="table" [attr.aria-busy]="loading">
+        <thead>
+          <tr role="row">
+            @if (showRank) {
+              <th class="col-rank" scope="col" aria-label="Rank">#</th>
+            }
+            @for (col of columns; track col.field) {
+              <th
+                scope="col"
+                [class.sortable]="col.sortable"
+                [class.sorted]="sortConfig.field === col.field"
+                [style.text-align]="col.align ?? 'left'"
+                (click)="col.sortable && onSort(col.field)"
+                [attr.aria-sort]="
+                  col.sortable && sortConfig.field === col.field
+                    ? sortConfig.direction === 'asc' ? 'ascending' : 'descending'
+                    : 'none'
+                ">
+                {{ col.header }}
+                @if (col.sortable) {
+                  <span class="sort-icon" aria-hidden="true">{{ sortIcon(col.field) }}</span>
+                }
+              </th>
+            }
+          </tr>
+        </thead>
+
+        <tbody>
+          <!-- Skeleton rows -->
+          @if (loading) {
+            @for (i of skeletonArray; track i) {
+              <tr role="row" class="skeleton-row">
+                @if (showRank) { <td><div class="skel skel--sm"></div></td> }
+                @for (col of columns; track col.field) {
+                  <td><div class="skel" [class.skel--sm]="col.align === 'right'"></div></td>
+                }
+              </tr>
+            }
+          }
+
+          <!-- Empty state (inside tbody so table structure stays valid) -->
+          @if (!loading && displayRows.length === 0) {
+            <tr role="row">
+              <td [attr.colspan]="columns.length + (showRank ? 1 : 0)" class="empty-cell">
+                <div class="empty-state">
+                  <span class="empty-state__icon" aria-hidden="true">📋</span>
+                  <p class="empty-state__title">{{ emptyMessage }}</p>
+                </div>
+              </td>
+            </tr>
+          }
+
+          <!-- Data rows -->
+          @if (!loading) {
+            @for (row of displayRows; track $index) {
+              <tr role="row">
+                @if (showRank) {
+                  <td class="col-rank">
+                    <span class="rank-badge" [class.rank-badge--top]="$index < 3">
+                      {{ $index + 1 }}
+                    </span>
+                  </td>
+                }
+                @for (col of columns; track col.field) {
+                  <td [style.text-align]="col.align ?? 'left'">
+                    {{ formatCell(row[col.field], col) }}
+                  </td>
+                }
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+</div>

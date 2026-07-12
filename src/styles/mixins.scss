@@ -1,0 +1,91 @@
+// =============================================================================
+// SCSS Mixins
+// =============================================================================
+@use 'design-tokens' as *;
+
+// Responsive breakpoints
+@mixin respond-to($bp) {
+  @if $bp == sm    { @media (min-width: #{$breakpoint-sm})  { @content; } }
+  @else if $bp == md  { @media (min-width: #{$breakpoint-md})  { @content; } }
+  @else if $bp == lg  { @media (min-width: #{$breakpoint-lg})  { @content; } }
+  @else if $bp == xl  { @media (min-width: #{$breakpoint-xl})  { @content; } }
+  @else if $bp == 2xl { @media (min-width: #{$breakpoint-2xl}) { @content; } }
+}
+
+@mixin respond-below($bp) {
+  @if $bp == sm    { @media (max-width: #{$breakpoint-sm - 1px})  { @content; } }
+  @else if $bp == md  { @media (max-width: #{$breakpoint-md - 1px})  { @content; } }
+  @else if $bp == lg  { @media (max-width: #{$breakpoint-lg - 1px})  { @content; } }
+  @else if $bp == xl  { @media (max-width: #{$breakpoint-xl - 1px})  { @content; } }
+}
+
+// Card
+@mixin card($padding: $space-6) {
+  background: $color-surface;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-md;
+  border: 1px solid $color-border;
+  padding: $padding;
+}
+
+// Flex helpers
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// Truncate text
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Skeleton shimmer animation
+@mixin skeleton {
+  background: linear-gradient(
+    90deg,
+    $color-neutral-100 25%,
+    $color-neutral-200 50%,
+    $color-neutral-100 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: $radius-md;
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+// Focus ring
+@mixin focus-ring {
+  &:focus-visible {
+    outline: none;
+    box-shadow: $shadow-focus;
+  }
+}
+
+// Scrollbar style
+@mixin custom-scrollbar {
+  & {
+    scrollbar-width: thin;
+    scrollbar-color: $color-neutral-300 transparent;
+  }
+
+  &::-webkit-scrollbar { width: 6px; height: 6px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: $color-neutral-300;
+    border-radius: $radius-full;
+    &:hover { background: $color-neutral-400; }
+  }
+}

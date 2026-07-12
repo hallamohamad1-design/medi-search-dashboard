@@ -1,0 +1,217 @@
+<section class="admin-dash fade-in" aria-labelledby="admin-title">
+
+  <!-- ── Page header ──────────────────────────────────────────────────────── -->
+  <header class="page-header">
+    <div>
+      <h1 class="page-header__title" id="admin-title">Admin Analytics</h1>
+      <p class="page-header__sub">System-wide insights · Last 30 days · Refreshes daily</p>
+    </div>
+    <span class="badge badge--success">● Live</span>
+  </header>
+
+  <!-- ── Global error banner ──────────────────────────────────────────────── -->
+  @if (isError) {
+    <div class="error-state" role="alert">
+      <span class="error-state__icon" aria-hidden="true">⚠️</span>
+      <p class="error-state__title">{{ errorMessage }}</p>
+      <p class="error-state__body">Make sure the backend is running.</p>
+    </div>
+  }
+
+  <!-- ── Summary KPI cards ────────────────────────────────────────────────── -->
+  <div class="stats-grid" role="list">
+    <div role="listitem">
+      <ms-stat-card icon="🏥" label="Active Pharmacies"
+        [value]="!isLoading ? (totalPharmacies | number) ?? '' : ''"
+        [loading]="isLoading" variant="primary">
+      </ms-stat-card>
+    </div>
+    <div role="listitem">
+      <ms-stat-card icon="👁️" label="Total System Views"
+        [value]="!isLoading ? (totalSystemViews | number) ?? '' : ''"
+        [loading]="isLoading" variant="info">
+      </ms-stat-card>
+    </div>
+    <div role="listitem">
+      <ms-stat-card icon="🔍" label="Total Drug Searches"
+        [value]="!isLoading ? (totalSystemSearches | number) ?? '' : ''"
+        [loading]="isLoading" variant="success">
+      </ms-stat-card>
+    </div>
+    <div role="listitem">
+      <ms-stat-card icon="💊" label="Most Searched Drug"
+        [value]="!isLoading ? topSystemDrug : ''"
+        [loading]="isLoading" variant="warning" sublabel="system-wide">
+      </ms-stat-card>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       Row 1 — Pharmacy Traffic Ranking + Top Drugs Chart
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div class="two-col">
+
+    <!-- Pharmacy traffic ranking table -->
+    <article class="card" aria-label="Pharmacy traffic ranking">
+      <div class="card__header">
+        <div>
+          <h2 class="card__title">Pharmacy Traffic Ranking</h2>
+          <p class="card__sub">Total page views — last 30 days</p>
+        </div>
+        @if (!isLoading && pharmacyRanking.length) {
+          <span class="badge badge--primary">{{ pharmacyRanking.length }} pharmacies</span>
+        }
+      </div>
+      <ms-ranked-table
+        [columns]="rankingColumns"
+        [rows]="pharmacyRanking"
+        [loading]="isLoading"
+        [error]="isError"
+        [errorMessage]="errorMessage"
+        emptyMessage="No pharmacy traffic data yet.">
+      </ms-ranked-table>
+    </article>
+
+    <!-- Top searched drugs horizontal bar -->
+    <article class="card" aria-label="Top searched drugs system-wide">
+      <div class="card__header">
+        <div>
+          <h2 class="card__title">Top Searched Drugs</h2>
+          <p class="card__sub">System-wide — last 30 days</p>
+        </div>
+      </div>
+      <ms-trend-chart
+        datasetLabel="Total Searches"
+        [labels]="topDrugsChartLabels"
+        [data]="topDrugsChartData"
+        [loading]="isLoading"
+        [error]="isError"
+        [errorMessage]="errorMessage"
+        chartType="horizontalBar"
+        [height]="340"
+        color="#1a9fc9"
+        [fill]="false">
+      </ms-trend-chart>
+    </article>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       Area Drug Trends — with governorate / city filter
+       ══════════════════════════════════════════════════════════════════════ -->
+  <article class="card" aria-label="Area-level drug search trends">
+    <div class="card__header">
+      <div>
+        <h2 class="card__title">Area Drug Search Trends</h2>
+        <p class="card__sub">Filter by governorate or city to drill down</p>
+      </div>
+
+      <div class="card__filters" role="search" aria-label="Area filter">
+        <!-- Governorate -->
+        <div class="filter-group">
+          <label for="gov-select" class="filter-label">Governorate</label>
+          <select id="gov-select" class="filter-select"
+            [(ngModel)]="selectedGovernorate"
+            (change)="onGovernorateChange()"
+            aria-label="Select governorate">
+            <option [ngValue]="null">All governorates</option>
+            @for (gov of governorates; track gov) {
+              <option [ngValue]="gov">{{ gov }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- City (visible only when a governorate is selected) -->
+        @if (cities.length > 0) {
+          <div class="filter-group">
+            <label for="city-select" class="filter-label">City</label>
+            <select id="city-select" class="filter-select"
+              [(ngModel)]="selectedCity"
+              (change)="onCityChange()"
+              aria-label="Select city">
+              <option [ngValue]="null">All cities</option>
+              @for (city of cities; track city) {
+                <option [ngValue]="city">{{ city }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        @if (selectedGovernorate || selectedCity) {
+          <button class="btn btn--ghost btn--sm" (click)="clearAreaFilter()">✕ Clear</button>
+        }
+      </div>
+    </div>
+
+    <ms-ranked-table
+      [columns]="areaTrendsColumns"
+      [rows]="filteredTrends"
+      [loading]="isLoading"
+      [error]="isError"
+      [errorMessage]="errorMessage"
+      emptyMessage="No searches found for the selected area.">
+    </ms-ranked-table>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       Top Drugs full table
+       ══════════════════════════════════════════════════════════════════════ -->
+  <article class="card" aria-label="Top searched drugs full table">
+    <div class="card__header">
+      <div>
+        <h2 class="card__title">Top Drugs — Full Ranking</h2>
+        <p class="card__sub">All drugs ordered by total searches system-wide</p>
+      </div>
+    </div>
+    <ms-ranked-table
+      [columns]="topDrugsColumns"
+      [rows]="topDrugs"
+      [loading]="isLoading"
+      [error]="isError"
+      [errorMessage]="errorMessage"
+      emptyMessage="No drug search data available.">
+    </ms-ranked-table>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       Monthly Period-over-Period (stretch goal)
+       ══════════════════════════════════════════════════════════════════════ -->
+  <article class="card" aria-label="Monthly search volume">
+    <div class="card__header">
+      <div>
+        <h2 class="card__title">Monthly Search Volume</h2>
+        <p class="card__sub">Period-over-period trend by governorate</p>
+      </div>
+      <div class="filter-group">
+        <label for="monthly-gov" class="filter-label">Governorate</label>
+        <select id="monthly-gov" class="filter-select"
+          [(ngModel)]="monthlyGov"
+          (change)="onMonthlyGovChange()">
+          <option [ngValue]="null">All</option>
+          @for (gov of monthlyGovOptions; track gov) {
+            <option [ngValue]="gov">{{ gov }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <ms-trend-chart
+      datasetLabel="Searches"
+      [labels]="monthlyChartLabels"
+      [data]="monthlyChartData"
+      [loading]="isLoading"
+      [error]="isError"
+      [errorMessage]="errorMessage"
+      chartType="bar"
+      [height]="260"
+      color="#8b5cf6"
+      [fill]="false">
+    </ms-trend-chart>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       Pharmacy Access Management (Admin only)
+       ══════════════════════════════════════════════════════════════════════ -->
+  <ms-pharmacy-management />
+
+</section>
