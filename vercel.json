@@ -1,16 +1,14 @@
 {
   "version": 2,
   "buildCommand": "npm run build:prod",
-  "outputDirectory": "dist/medi-search-dashboard/browser",
   "installCommand": "npm install --legacy-peer-deps",
-  "framework": null,
   "functions": {
     "api/index.py": {
       "includeFiles": "BACK/app/**"
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/api/(.*)", "destination": "/api/index.py" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
