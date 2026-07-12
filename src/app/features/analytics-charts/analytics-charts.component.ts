@@ -249,7 +249,8 @@ export class AnalyticsChartsComponent implements OnInit {
 
     // Pharmacy traffic — load when pharmacy role
     if (pharmacyName) {
-      this.svc.getPharmacyAnalytics().subscribe({
+      const pharmacyId = this.auth.currentUser?.pharmacy_id ?? 0;
+      this.svc.getPharmacyAnalytics(pharmacyId).subscribe({
         next: pharmData => {
           this.buildTrafficCharts(pharmData.page_traffic);
           this.buildMixedChart(pharmData.page_traffic);
@@ -517,7 +518,8 @@ export class AnalyticsChartsComponent implements OnInit {
     this.selectedPeriod = period;
     const isPharmacy = this.auth.currentUser?.role === 'pharmacy';
     if (isPharmacy) {
-      this.svc.getPharmacyAnalytics().subscribe({
+      const pharmacyId = this.auth.currentUser?.pharmacy_id ?? 0;
+      this.svc.getPharmacyAnalytics(pharmacyId).subscribe({
         next: data => this.buildTrafficCharts(data.page_traffic),
         error: () => { /* keep existing chart */ },
       });
