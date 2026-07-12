@@ -1,6 +1,6 @@
 import os
-import re
-from flask import Flask, request
+from flask import Flask
+from flask_cors import CORS
 
 from routes.pharmacy import pharmacy
 from routes.search import analytics
@@ -8,6 +8,23 @@ from routes.admin import admin
 from routes.auth import auth_bp
 
 app = Flask(__name__)
+
+# ── CORS ──────────────────────────────────────────────────────────────────────
+# Allow the Vercel domain and localhost to send credentialed requests.
+# In production on Vercel the frontend and API are on the same origin, so CORS
+# headers are only needed for local development (ng serve → flask).
+_origins = os.environ.get(
+    "CORS_ORIGINS",
+    "http://localhost:4200,http://127.0.0.1:4200"
+).split(",")
+
+CORS(
+    app,
+    origins=_origins,
+    supports_credentials=True,
+    allow_headers=["Content-Type", "Authorization", "Accept"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+)
 
 # ── Blueprints ────────────────────────────────────────────────────────────────
 app.register_blueprint(auth_bp)

@@ -94,8 +94,16 @@ def auth_login():
 
     try:
         token, user_info = login(username, password)
+        is_secure = os.environ.get("VERCEL", "") != ""  # True only on Vercel
         res = jsonify({"success": True, "token": token, "user": user_info})
-        res.set_cookie("session_token", token, httponly=True, samesite="Strict", secure=True)
+        res.set_cookie(
+            "session_token",
+            token,
+            httponly=True,
+            samesite="Lax",
+            secure=is_secure,
+            max_age=8 * 3600,
+        )
         return res
     except ValueError as e:
         return jsonify({"success": False, "message": str(e)}), 401
@@ -104,7 +112,7 @@ def auth_login():
 def auth_logout():
     """Logs the user out by clearing the session cookie."""
     res = jsonify({"success": True})
-    res.delete_cookie("session_token")
+    res.delete_cookie("session_token", samesite="Lax")
     return res
 
 
