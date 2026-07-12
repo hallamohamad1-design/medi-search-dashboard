@@ -31,7 +31,7 @@ export class LoginComponent {
     this.auth.login(this.username.trim(), this.password).subscribe({
       next: res => {
         this.loading = false;
-        const dest   = res.user.role === 'admin' ? '/dashboard/admin' : '/dashboard/pharmacy';
+        const dest   = res.user.role === 'admin' ? '/dashboard/admin' : `/dashboard/pharmacy/${res.user.pharmacy_id}`;
         this.router.navigate([dest]);
       },
       error: (err: Error) => {
